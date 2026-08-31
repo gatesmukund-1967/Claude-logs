@@ -1,0 +1,632 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>Body Log</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='22' fill='%237aa2e8'/%3E%3Ctext x='50' y='68' font-size='54' text-anchor='middle'%3E%E2%9A%96%EF%B8%8F%3C/text%3E%3C/svg%3E">
+<link rel="apple-touch-icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='22' fill='%237aa2e8'/%3E%3Ctext x='50' y='68' font-size='54' text-anchor='middle'%3E%E2%9A%96%EF%B8%8F%3C/text%3E%3C/svg%3E">
+<meta name="theme-color" content="#7aa2e8">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600&family=IBM+Plex+Mono:wght@500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#12141a;
+    --surface:#1b1f27;
+    --surface2:#242933;
+    --border:#2e3440;
+    --text:#edeff2;
+    --muted:#8a9099;
+    --muted2:#5b6068;
+    --up:#6fcf97;
+    --ref:#7aa2e8;
+    --tape:#f0a860;
+    --radius:14px;
+  }
+  *{box-sizing:border-box; -webkit-tap-highlight-color:transparent;}
+  html,body{margin:0; padding:0; background:var(--bg); color:var(--text); font-weight:500;
+    font-family:'Inter',system-ui,sans-serif; -webkit-font-smoothing:antialiased;}
+  body{padding-bottom:40px;}
+  h1,h2,h3{font-family:'Space Grotesk',sans-serif; margin:0; font-weight:700;}
+  .mono{font-family:'IBM Plex Mono',monospace;}
+  button{font-family:inherit; border:none; background:none; color:inherit; cursor:pointer;}
+  input{font-family:inherit; color:var(--text); background:var(--surface2); border:1px solid var(--border);
+    border-radius:10px; padding:8px 10px; font-size:15px; width:100%;}
+  input:focus{outline:2px solid var(--up); outline-offset:1px;}
+
+  header{position:sticky; top:0; z-index:20; background:var(--bg); padding:18px 16px 16px;
+    border-bottom:1px solid var(--border);}
+  .brand{display:flex; align-items:baseline; justify-content:space-between;}
+  .brand h1{font-size:20px; letter-spacing:.2px; font-weight:700;}
+  .brand .date{font-size:12px; color:var(--muted); font-family:'IBM Plex Mono',monospace;}
+
+  main{padding:16px;}
+  .section-label{font-size:11px; text-transform:uppercase; letter-spacing:.08em; color:var(--muted2);
+    margin:18px 4px 8px; font-weight:600;}
+  .section-label:first-child{margin-top:0;}
+
+  .card{background:var(--surface); border:1px solid var(--border); border-radius:var(--radius);
+    padding:14px; margin-bottom:10px;}
+  .ex-meta{font-size:11.5px; color:var(--muted);}
+  .ex-name{font-size:15.5px; font-weight:600;}
+
+  .spark{display:flex; align-items:flex-end; gap:3px; height:26px; margin-top:6px;}
+  .spark .bar{width:6px; background:var(--muted2); border-radius:2px 2px 0 0; min-height:3px;}
+  .spark .bar.cur{background:var(--up);}
+  .spark.tape .bar.cur{background:var(--tape);}
+
+  .dash-row{display:flex; gap:8px; margin-bottom:4px; overflow-x:auto;}
+  .dash-card{flex:1; min-width:0; background:var(--surface); border:1px solid var(--border);
+    border-radius:var(--radius); padding:12px;}
+  .dash-card.tape{border-color:rgba(240,168,96,0.35);}
+  .dash-card .ex-name{color:var(--up);}
+  .dash-card.tape .ex-name{color:var(--tape);}
+  .dash-card .ex-name{font-size:20px !important; font-weight:700;}
+
+  .trend-table-wrap{overflow-x:auto; border:1px solid var(--border); border-radius:var(--radius);
+    background:var(--surface);}
+  table.trend-table{border-collapse:collapse; width:100%; font-size:12.5px;}
+  table.trend-table th, table.trend-table td{padding:9px 10px; text-align:right; white-space:nowrap;
+    border-bottom:1px solid var(--border);}
+  table.trend-table th:first-child, table.trend-table td:first-child{text-align:left; position:sticky; left:0;
+    background:var(--surface); font-family:'IBM Plex Mono',monospace; color:var(--muted);}
+  table.trend-table th{color:var(--muted); font-weight:600; font-size:11px; text-transform:uppercase;
+    letter-spacing:.04em;}
+  table.trend-table td{font-family:'IBM Plex Mono',monospace; color:var(--text);}
+  table.trend-table tr:last-child td{border-bottom:none;}
+  table.trend-table th.latest, table.trend-table td.latest{background:rgba(111,207,151,0.10); color:var(--up); font-weight:600;}
+
+  .save-btn{width:100%; background:var(--up); color:#0d1a12; font-weight:700; font-size:15px;
+    padding:14px; border-radius:12px; text-align:center; margin-top:6px;}
+  .save-btn:active{opacity:.85;}
+  .save-btn.saved{background:var(--surface2); color:var(--up);}
+
+  .empty{text-align:center; padding:32px 20px; color:var(--muted); font-size:13.5px;}
+
+  .hist-item{background:var(--surface); border:1px solid var(--border); border-radius:var(--radius);
+    padding:13px 14px; margin-bottom:8px;}
+  .hist-top{display:flex; justify-content:space-between; align-items:center;}
+  .hist-day{font-weight:600; font-size:14px; font-family:'IBM Plex Mono',monospace;}
+  .hist-summary{font-size:12.5px; color:var(--muted); margin-top:6px; line-height:1.5;}
+
+  .dexa-card{background:linear-gradient(160deg, rgba(122,162,232,0.10), var(--surface));
+    border:1px solid rgba(122,162,232,0.35); border-radius:var(--radius); padding:14px; margin-bottom:14px;}
+  .dexa-head{display:flex; justify-content:space-between; align-items:baseline; margin-bottom:10px;}
+  .dexa-title{font-size:13.5px; font-weight:600; color:var(--ref);}
+  .dexa-date{font-size:11px; color:var(--muted); font-family:'IBM Plex Mono',monospace;}
+  .dexa-grid{display:grid; grid-template-columns:1fr 1fr; gap:10px;}
+  .dexa-item{background:var(--surface2); border-radius:10px; padding:9px 10px;}
+  .dexa-label{font-size:10.5px; color:var(--muted); margin-bottom:2px;}
+  .dexa-value{font-size:15px; font-weight:600; font-family:'IBM Plex Mono',monospace;}
+  .dexa-note{font-size:10px; color:var(--muted2); margin-top:2px;}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="brand">
+    <h1>Body Log</h1>
+    <div class="date mono" id="todayLabel"></div>
+  </div>
+</header>
+
+<main id="main"></main>
+
+<script>
+const STORAGE_BODY = 'bodylogs';
+
+const BODY_FIELDS = [
+  {key:'weightBedroom', label:'Weight (bedroom scale)', unit:'kg', group:'daily'},
+  {key:'chest', label:'Chest', unit:'cm', group:'tape'},
+  {key:'waist', label:'Waist', unit:'cm', group:'tape'},
+  {key:'hip', label:'Hip', unit:'cm', group:'tape'},
+  {key:'thigh8', label:'Thigh (8" from knee)', unit:'cm', group:'tape'},
+  {key:'thigh10', label:'Thigh (10" from knee)', unit:'cm', group:'tape'},
+  {key:'biceps', label:'Biceps', unit:'cm', group:'tape'},
+  {key:'calf', label:'Calf', unit:'cm', group:'tape'},
+  {key:'weightFittr', label:'Weight (Fittr scale)', unit:'kg', group:'fittr'},
+  {key:'fatMass', label:'Fat mass', unit:'kg', group:'fittr'},
+  {key:'leanMass', label:'Lean mass', unit:'kg', group:'fittr'},
+  {key:'skeletalMuscle', label:'Skeletal muscle mass', unit:'kg', group:'fittr'},
+  {key:'fatPercent', label:'Fat percentage', unit:'%', group:'fittr'},
+  {key:'visceralFat', label:'Visceral fat mass', unit:'kg', group:'fittr'},
+  {key:'totalWater', label:'Total water', unit:'kg', group:'fittr'},
+  {key:'intraWater', label:'Intracellular water', unit:'kg', group:'fittr'},
+  {key:'extraWater', label:'Extracellular water', unit:'kg', group:'fittr'},
+  {key:'boneMass', label:'Bone mass', unit:'kg', group:'fittr'},
+  {key:'bmr', label:'BMR', unit:'kcal', group:'fittr'},
+];
+
+const DEFAULT_BODY_LOGS = [
+  {date:'2026-02-12', weightBedroom:79.70, chest:106, waist:106, hip:102, thigh8:55, biceps:32},
+  {date:'2026-02-24', weightBedroom:79.8, chest:107, waist:103, hip:100, thigh8:53, biceps:33},
+  {date:'2026-02-26', weightFittr:79.3, fatMass:25.2, fatPercent:31.7, skeletalMuscle:30.2, leanMass:54.1, visceralFat:2.8},
+  {date:'2026-03-14', weightBedroom:76.70, weightFittr:76.6, chest:102, waist:103, hip:100, thigh8:52, biceps:32, fatMass:21.5, fatPercent:28.1, skeletalMuscle:30.9, leanMass:55.1, visceralFat:2.2},
+  {date:'2026-03-20', weightBedroom:76.30, chest:101, waist:100.5, hip:99, thigh8:51, biceps:33},
+  {date:'2026-03-29', weightBedroom:76.15, chest:99, waist:99, hip:97.5, thigh8:49, biceps:32},
+  {date:'2026-04-01', weightBedroom:76.10, chest:100, waist:101, hip:99, thigh8:49, thigh10:55, calf:38, biceps:31},
+  {date:'2026-04-04', weightFittr:76.3, fatMass:20.8, fatPercent:27.2, skeletalMuscle:31.2, leanMass:55.5, visceralFat:2.2},
+  {date:'2026-04-08', weightBedroom:76.15, chest:100, waist:100.5, hip:98, thigh8:51, thigh10:54, calf:37.5, biceps:32},
+  {date:'2026-05-01', weightBedroom:76.40, chest:99, waist:99, hip:99, thigh8:52, thigh10:54, calf:38.5, biceps:33},
+  {date:'2026-05-08', weightBedroom:76.0, weightFittr:75.8, chest:101, waist:100, hip:98, thigh8:50, thigh10:55, calf:38.5, biceps:31, fatMass:21.8, fatPercent:28.8, skeletalMuscle:30.2, leanMass:54.0, visceralFat:2.2},
+  {date:'2026-05-30', chest:98, hip:99, thigh8:51, thigh10:56, calf:37, biceps:31},
+  {date:'2026-06-06', weightBedroom:75.65, weightFittr:76.4, chest:100, hip:98, thigh10:55, calf:36, fatMass:20.3, fatPercent:26.5, skeletalMuscle:31.6, leanMass:56.1, visceralFat:2.2},
+  {date:'2026-07-08', weightBedroom:76.30, weightFittr:76.3, chest:98, waist:99, hip:98, thigh8:48, thigh10:52, biceps:32, calf:37.5, fatMass:20.1, leanMass:56.2, skeletalMuscle:31.6, fatPercent:26.4, visceralFat:2.4, totalWater:39.9, intraWater:24.5, extraWater:15.1},
+  {date:'2026-07-30', weightBedroom:76.05, chest:98, waist:99, hip:98, thigh8:51, thigh10:53, biceps:32, calf:37},
+  {date:'2026-08-22', weightFittr:78.4, fatMass:20.9, leanMass:57.5, skeletalMuscle:32.5, fatPercent:26.6, visceralFat:2.5, totalWater:42.1, intraWater:26.3, extraWater:15.8, boneMass:3.2, bmr:1612},
+  {date:'2026-08-23', weightBedroom:77.70, chest:99, waist:99, hip:99, thigh8:48, thigh10:50, calf:36.5},
+  {date:'2026-08-28', weightBedroom:77.55},
+  {date:'2026-08-29', weightBedroom:77.30},
+];
+
+const DEXA_REFERENCE = {
+  date: 'June 25, 2026',
+  source: 'Northwestern Executive Health — DEXA scan',
+  items: [
+    {label:'Body fat %', value:'23.4%', note:'17.94 kg of 76.69 kg total'},
+    {label:'Visceral fat area', value:'160 cm²', note:'borderline-moderate'},
+    {label:'Android/Gynoid ratio', value:'1.29'},
+    {label:'Trunk/Limb fat ratio', value:'1.55', note:'99th pct — central fat'},
+    {label:'App. Lean Mass Index', value:'8.96 kg/m²', note:'above sarcopenia cutoff'},
+  ]
+};
+
+let bodyLogs = DEFAULT_BODY_LOGS.map(b=>({...b}));
+let draft = {};
+let draftDate = new Date().toISOString().slice(0,10);
+let fittrDraft = {};
+let fittrDraftDate = new Date().toISOString().slice(0,10);
+
+function loadDraftFromDate(date){
+  draftDate = date;
+  const entry = bodyLogs.find(b=>b.date===date);
+  draft = {};
+  BODY_FIELDS.filter(f=>f.group!=='fittr').forEach(f=>{
+    draft[f.key] = entry && entry[f.key]!==undefined && entry[f.key]!=='' ? entry[f.key] : '';
+  });
+}
+
+function loadFittrDraftFromDate(date){
+  fittrDraftDate = date;
+  const entry = bodyLogs.find(b=>b.date===date);
+  fittrDraft = {};
+  BODY_FIELDS.filter(f=>f.group==='fittr').forEach(f=>{
+    fittrDraft[f.key] = entry && entry[f.key]!==undefined && entry[f.key]!=='' ? entry[f.key] : '';
+  });
+}
+
+function saveBodyLogs(){
+  try{
+    localStorage.setItem(STORAGE_BODY, JSON.stringify(bodyLogs));
+    return true;
+  }catch(e){
+    console.warn('localStorage save failed:', e);
+    alert('Could not save — your browser may be blocking local storage for this file.');
+    return false;
+  }
+}
+
+function loadAll(){
+  try{
+    const raw = localStorage.getItem(STORAGE_BODY);
+    if(raw){ bodyLogs = JSON.parse(raw); }
+    else { saveBodyLogs(); }
+  }catch(e){
+    console.warn('localStorage load failed:', e);
+  }
+
+  let merged = false;
+  DEFAULT_BODY_LOGS.forEach(seed=>{
+    if(!bodyLogs.some(b2=>b2.date===seed.date)){
+      bodyLogs.push({...seed});
+      merged = true;
+    }
+  });
+  if(merged){
+    bodyLogs.sort((a,b2)=>a.date.localeCompare(b2.date));
+    saveBodyLogs();
+  }
+}
+
+function todayLabel(){
+  const d = new Date();
+  const dd = String(d.getDate()).padStart(2,'0');
+  const mmm = d.toLocaleDateString(undefined,{month:'short'});
+  const weekday = d.toLocaleDateString(undefined,{weekday:'short'});
+  return `${weekday}, ${dd} ${mmm}`;
+}
+function fmtDateDDMM(iso){
+  const [y,m,d] = iso.split('-');
+  return `${d}/${m}`;
+}
+
+function latestBodyValue(key){
+  for(let i=bodyLogs.length-1;i>=0;i--){
+    if(bodyLogs[i][key]!==undefined && bodyLogs[i][key]!==null && bodyLogs[i][key]!=='') return bodyLogs[i][key];
+  }
+  return null;
+}
+function recentBodyValues(key, n=6){
+  const vals=[];
+  for(let i=bodyLogs.length-1;i>=0 && vals.length<n;i--){
+    const v = bodyLogs[i][key];
+    if(v!==undefined && v!==null && v!=='') vals.push(v);
+  }
+  return vals.reverse();
+}
+function bodySparkHtml(key, isTape){
+  const vals = recentBodyValues(key,6);
+  if(vals.length<2) return '';
+  const max = Math.max(...vals), min = Math.min(...vals);
+  const range = (max-min) || 1;
+  const bars = vals.map((v,i)=>{
+    const h = Math.max(4, Math.round(((v-min)/range)*26));
+    return `<div class="bar ${i===vals.length-1?'cur':''}" style="height:${h}px" title="${v}"></div>`;
+  }).join('');
+  return `<div class="spark${isTape?' tape':''}">${bars}</div>`;
+}
+
+// Full-size line chart for one metric across every logged date — used on the
+// journey view so trends read as an actual chart, not a tiny bar sparkline.
+function bodyLineChart(key, label, unit, color, isTape){
+  const rows = bodyLogs.filter(b=>b[key]!==undefined && b[key]!=='').map(b=>({date:b.date, value:parseFloat(b[key])}));
+  if(!rows.length) return `<div class="card${isTape?' tape':''}"><div class="ex-meta">${label}</div><div class="empty">No entries yet.</div></div>`;
+  const latest = rows[rows.length-1].value;
+  if(rows.length<2){
+    return `<div class="card${isTape?' tape':''}">
+      <div style="display:flex; justify-content:space-between; align-items:baseline;">
+        <div class="ex-meta">${label}</div>
+        <div class="mono" style="font-size:22px; font-weight:700; color:${color};">${latest}${unit}</div>
+      </div>
+      <div class="empty">Need at least 2 entries to chart a trend.</div>
+    </div>`;
+  }
+  const values = rows.map(r=>r.value);
+  const min = Math.min(...values), max = Math.max(...values);
+  const range = (max-min) || 1;
+  const w = 600, h = 220, padX = 14, padY = 18;
+  const stepX = (w-2*padX) / (rows.length-1);
+  const points = rows.map((r,i)=>{
+    const x = padX + i*stepX;
+    const y = h-padY - ((r.value-min)/range)*(h-2*padY);
+    return {x,y,...r};
+  });
+  const polyline = points.map(p=>`${p.x.toFixed(1)},${p.y.toFixed(1)}`).join(' ');
+  const dots = points.map((p,i)=>
+    `<circle cx="${p.x.toFixed(1)}" cy="${p.y.toFixed(1)}" r="${i===points.length-1?5:3}" fill="${i===points.length-1?color:'var(--muted2)'}"/>`
+  ).join('');
+  // Thin out date labels if there are many points, so they don't overlap
+  const labelEvery = Math.max(1, Math.ceil(points.length/6));
+  const dateLabels = points.map((p,i)=>{
+    if(i%labelEvery!==0 && i!==points.length-1) return '';
+    return `<text x="${p.x.toFixed(1)}" y="${h-2}" font-size="9" fill="var(--muted2)" text-anchor="middle">${fmtDateDDMM(p.date)}</text>`;
+  }).join('');
+
+  return `<div class="card${isTape?' tape':''}">
+    <div style="display:flex; justify-content:space-between; align-items:baseline;">
+      <div class="ex-meta">${label}</div>
+      <div class="mono" style="font-size:22px; font-weight:700; color:${color};">${latest}${unit}</div>
+    </div>
+    <svg viewBox="0 0 ${w} ${h}" style="width:100%; height:180px; margin-top:8px; display:block;">
+      <polyline points="${polyline}" fill="none" stroke="${color}" stroke-width="2.5"/>
+      ${dots}
+      ${dateLabels}
+    </svg>
+    <div style="display:flex; justify-content:space-between; font-size:10.5px; color:var(--muted); margin-top:2px;">
+      <span>min ${min}${unit}</span>
+      <span>${rows.length} entries</span>
+      <span>max ${max}${unit}</span>
+    </div>
+  </div>`;
+}
+
+function initDraft(){
+  loadDraftFromDate(new Date().toISOString().slice(0,10));
+  const hasToday = bodyLogs.some(b=>b.date===draftDate);
+  if(!hasToday){
+    BODY_FIELDS.filter(f=>f.group!=='fittr').forEach(f=>{
+      const v = latestBodyValue(f.key);
+      draft[f.key] = v!==null ? v : '';
+    });
+  }
+  loadFittrDraftFromDate(new Date().toISOString().slice(0,10));
+  const hasTodayFittr = bodyLogs.some(b=>b.date===fittrDraftDate && BODY_FIELDS.some(f=>f.group==='fittr' && b[f.key]!==undefined && b[f.key]!==''));
+  if(!hasTodayFittr){
+    BODY_FIELDS.filter(f=>f.group==='fittr').forEach(f=>{
+      const v = latestBodyValue(f.key);
+      fittrDraft[f.key] = v!==null ? v : '';
+    });
+  }
+}
+
+function renderDexaCard(){
+  const items = DEXA_REFERENCE.items.map(it=>`
+    <div class="dexa-item">
+      <div class="dexa-label">${it.label}</div>
+      <div class="dexa-value">${it.value}</div>
+      ${it.note ? `<div class="dexa-note">${it.note}</div>` : ''}
+    </div>`).join('');
+  return `<div class="dexa-card">
+    <div class="dexa-head">
+      <div class="dexa-title">${DEXA_REFERENCE.source}</div>
+      <div class="dexa-date">${DEXA_REFERENCE.date}</div>
+    </div>
+    <div class="dexa-grid">${items}</div>
+  </div>`;
+}
+
+function buildReportText(){
+  let lines = [];
+  lines.push(`Body log summary (generated ${fmtDateDDMM(new Date().toISOString().slice(0,10))}/2026)`);
+  lines.push('');
+  lines.push(`DEXA reference — ${DEXA_REFERENCE.source}, ${DEXA_REFERENCE.date}`);
+  DEXA_REFERENCE.items.forEach(it=>{
+    lines.push(`  ${it.label}: ${it.value}${it.note ? ' ('+it.note+')' : ''}`);
+  });
+  lines.push('');
+
+  const fittrKeys = BODY_FIELDS.filter(f=>f.group==='fittr');
+  const fittrRows = bodyLogs.filter(b=>fittrKeys.some(k=>b[k.key]!==undefined && b[k.key]!==''));
+  if(fittrRows.length){
+    lines.push('## Body composition (Fittr)');
+    fittrRows.forEach(b=>{
+      const parts = fittrKeys.filter(k=>b[k.key]!==undefined && b[k.key]!=='').map(k=>`${k.label} ${b[k.key]}${k.unit}`);
+      lines.push(`${fmtDateDDMM(b.date)} — ${parts.join(', ')}`);
+    });
+    lines.push('');
+  }
+
+  const tapeKeysAll = BODY_FIELDS.filter(f=>f.group==='tape');
+  const tapeRows = bodyLogs.filter(b=>tapeKeysAll.some(k=>b[k.key]!==undefined && b[k.key]!==''));
+  if(tapeRows.length){
+    lines.push('## Tape measurements (cm)');
+    tapeRows.forEach(b=>{
+      const parts = tapeKeysAll.filter(k=>b[k.key]!==undefined && b[k.key]!=='').map(k=>`${k.label} ${b[k.key]}`);
+      lines.push(`${fmtDateDDMM(b.date)} — ${parts.join(', ')}`);
+    });
+    lines.push('');
+  }
+
+  if(lines.length<=5){ lines.push('No entries logged yet.'); }
+  return lines.join('\n');
+}
+
+function render(){
+  document.getElementById('todayLabel').textContent = todayLabel();
+
+  const compositionCharts = [
+    {key:'weightBedroom', label:'Weight', unit:'kg', color:'var(--up)'},
+    {key:'fatMass', label:'Fat mass', unit:'kg', color:'var(--up)'},
+    {key:'fatPercent', label:'Fat %', unit:'%', color:'var(--up)'},
+    {key:'leanMass', label:'Lean mass', unit:'kg', color:'var(--up)'},
+    {key:'skeletalMuscle', label:'Skeletal muscle', unit:'kg', color:'var(--up)'},
+    {key:'visceralFat', label:'Visceral fat', unit:'kg', color:'var(--up)'},
+  ].map(c=>bodyLineChart(c.key, c.label, c.unit, c.color, false)).join('');
+
+  const tapeCharts = [
+    {key:'chest', label:'Chest', unit:'cm'},
+    {key:'waist', label:'Waist', unit:'cm'},
+    {key:'hip', label:'Hip', unit:'cm'},
+    {key:'thigh8', label:'Thigh (8")', unit:'cm'},
+    {key:'thigh10', label:'Thigh (10")', unit:'cm'},
+    {key:'biceps', label:'Biceps', unit:'cm'},
+    {key:'calf', label:'Calf', unit:'cm'},
+  ].map(c=>bodyLineChart(c.key, c.label, c.unit, 'var(--tape)', true)).join('');
+
+  const groupLabel = {daily:'Daily', tape:'Tape measurements (cm)'};
+  let formHtml = `<div class="section-label">Entry date</div><div class="card">
+    <input type="date" id="entryDate" value="${draftDate}">
+  </div>`;
+  ['daily','tape'].forEach(group=>{
+    formHtml += `<div class="section-label">${groupLabel[group]}</div><div class="card">`;
+    BODY_FIELDS.filter(f=>f.group===group).forEach(f=>{
+      formHtml += `<div style="margin-bottom:10px;">
+        <label style="font-size:12px; color:var(--muted); display:block; margin-bottom:4px;">${f.label} (${f.unit})</label>
+        <input type="number" inputmode="decimal" class="body-input" data-key="${f.key}" value="${draft[f.key]}" placeholder="0">
+      </div>`;
+    });
+    formHtml += `</div>`;
+  });
+
+  let fittrFormHtml = `<div class="section-label">Fittr scan date</div><div class="card">
+    <input type="date" id="fittrEntryDate" value="${fittrDraftDate}">
+  </div><div class="card">`;
+  BODY_FIELDS.filter(f=>f.group==='fittr').forEach(f=>{
+    fittrFormHtml += `<div style="margin-bottom:10px;">
+      <label style="font-size:12px; color:var(--muted); display:block; margin-bottom:4px;">${f.label} (${f.unit})</label>
+      <input type="number" inputmode="decimal" class="fittr-input" data-key="${f.key}" value="${fittrDraft[f.key]}" placeholder="0">
+    </div>`;
+  });
+  fittrFormHtml += `</div>`;
+
+  const isToday = draftDate === new Date().toISOString().slice(0,10);
+  const isExisting = bodyLogs.some(b=>b.date===draftDate && BODY_FIELDS.some(f=>f.group!=='fittr' && b[f.key]!==undefined && b[f.key]!==''));
+  const isFittrToday = fittrDraftDate === new Date().toISOString().slice(0,10);
+  const isFittrExisting = bodyLogs.some(b=>b.date===fittrDraftDate && BODY_FIELDS.some(f=>f.group==='fittr' && b[f.key]!==undefined && b[f.key]!==''));
+
+  function buildTrendTable(keys, n=30){
+    const rows = [...bodyLogs].filter(b=>keys.some(k=>b[k.key]!==undefined && b[k.key]!=='' && b[k.key]!==null))
+      .slice(-n);
+    if(!rows.length) return '<div class="empty">No entries yet.</div>';
+    const head = `<tr><th>Metric</th>${rows.map((b,i)=>`<th class="${i===rows.length-1?'latest':''}">${fmtDateDDMM(b.date)}</th>`).join('')}</tr>`;
+    const body = keys.map(k=>`<tr><td>${k.label}</td>${rows.map((b,i)=>
+      `<td class="${i===rows.length-1?'latest':''}">${b[k.key]!==undefined && b[k.key]!=='' && b[k.key]!==null ? b[k.key] : '—'}</td>`).join('')}</tr>`).join('');
+    return `<div class="trend-table-wrap"><table class="trend-table">${head}${body}</table></div>`;
+  }
+
+  const fittrTableKeys = [
+    {key:'weightFittr', label:'Wt'},
+    {key:'fatMass', label:'Fat'},
+    {key:'fatPercent', label:'Fat%'},
+    {key:'leanMass', label:'Lean'},
+    {key:'skeletalMuscle', label:'Musc'},
+    {key:'visceralFat', label:'Visc'},
+  ];
+
+  const tapeKeys = [
+    {key:'chest', label:'Chest'},
+    {key:'waist', label:'Waist'},
+    {key:'hip', label:'Hip'},
+    {key:'thigh8', label:'Thigh (8")'},
+    {key:'thigh10', label:'Thigh (10")'},
+    {key:'biceps', label:'Biceps'},
+    {key:'calf', label:'Calf'},
+  ];
+
+  document.getElementById('main').innerHTML = `
+    <div class="section-label">DEXA reference</div>
+    ${renderDexaCard()}
+    <div class="section-label">Your journey — body composition</div>
+    ${compositionCharts}
+    <div class="section-label" style="margin-top:8px;">Exact values</div>
+    ${buildTrendTable(fittrTableKeys)}
+    <div class="section-label" style="margin-top:24px;">Your journey — tape measurements</div>
+    ${tapeCharts}
+    <div class="section-label" style="margin-top:8px;">Exact values</div>
+    ${buildTrendTable(tapeKeys)}
+    <div class="section-label" style="margin-top:24px;">Shareable report</div>
+    <div class="card">
+      <textarea id="reportText" readonly style="width:100%; min-height:220px; background:var(--surface2);
+        border:1px solid var(--border); border-radius:10px; padding:10px; color:var(--text);
+        font-family:'IBM Plex Mono',monospace; font-size:11.5px; line-height:1.6;">${buildReportText()}</textarea>
+    </div>
+    <button class="save-btn" id="copyReportBtn" style="background:var(--surface2); color:var(--up);">Copy report</button>
+    <div style="font-size:11.5px; color:var(--muted); margin-top:8px; text-align:center;">Paste this into a new chat with Claude, ChatGPT, or your coach.</div>
+    <div class="section-label" style="margin-top:24px;">Add / update daily & tape entry</div>
+    ${formHtml}
+    <button class="save-btn" id="saveBtn">${isExisting ? (isToday ? 'Update today\'s entry' : 'Update this entry') : 'Save entry'}</button>
+    <div class="section-label" style="margin-top:24px;">Add / update Fittr composition entry</div>
+    ${fittrFormHtml}
+    <button class="save-btn" id="saveFittrBtn" style="background:var(--tape); color:#2a1a08;">${isFittrExisting ? (isFittrToday ? 'Update today\'s Fittr entry' : 'Update this Fittr entry') : 'Save Fittr entry'}</button>
+    <div class="section-label" style="margin-top:24px;">Backup & restore</div>
+    <div class="card">
+      <div style="font-size:11.5px; color:var(--muted); margin-bottom:10px; line-height:1.5;">
+        Data lives in this browser only. Before downloading a new version of this app, export a backup here — then paste it back in after opening the new file.
+      </div>
+      <button class="save-btn" id="exportBtn" style="background:var(--surface2); color:var(--text); margin-bottom:14px;">Export backup</button>
+      <textarea id="backupText" readonly style="width:100%; min-height:100px; background:var(--surface2);
+        border:1px solid var(--border); border-radius:10px; padding:10px; color:var(--text);
+        font-family:'IBM Plex Mono',monospace; font-size:10.5px; line-height:1.5; display:none;"></textarea>
+      <button class="save-btn" id="copyBackupBtn" style="background:var(--surface2); color:var(--up); display:none; margin-top:8px;">Copy backup</button>
+      <div style="font-size:11px; color:var(--muted); margin-top:16px; margin-bottom:6px;">Paste a backup below to restore:</div>
+      <textarea id="importText" placeholder="Paste backup JSON here" style="width:100%; min-height:100px; background:var(--surface2);
+        border:1px solid var(--border); border-radius:10px; padding:10px; color:var(--text);
+        font-family:'IBM Plex Mono',monospace; font-size:10.5px;"></textarea>
+      <button class="save-btn" id="importBtn" style="margin-top:8px;">Restore from backup</button>
+    </div>
+  `;
+  attachEvents();
+}
+
+function attachEvents(){
+  const copyBtn = document.getElementById('copyReportBtn');
+  if(copyBtn) copyBtn.onclick = async ()=>{
+    const ta = document.getElementById('reportText');
+    try{
+      await navigator.clipboard.writeText(ta.value);
+    }catch(e){
+      ta.removeAttribute('readonly');
+      ta.select();
+      document.execCommand('copy');
+      ta.setAttribute('readonly','true');
+    }
+    copyBtn.textContent = 'Copied ✓';
+    setTimeout(()=>{ copyBtn.textContent = 'Copy report'; },1500);
+  };
+
+  document.querySelectorAll('.body-input').forEach(inp=>{
+    inp.oninput = ()=>{ draft[inp.dataset.key] = inp.value===''? '' : parseFloat(inp.value); };
+  });
+  const dateInp = document.getElementById('entryDate');
+  if(dateInp) dateInp.onchange = ()=>{ loadDraftFromDate(dateInp.value); render(); };
+
+  const btn = document.getElementById('saveBtn');
+  btn.onclick = async ()=>{
+    const date = document.getElementById('entryDate').value || draftDate;
+    let hasAny = false;
+    const updates = {};
+    BODY_FIELDS.filter(f=>f.group!=='fittr').forEach(f=>{
+      if(draft[f.key]!=='' && draft[f.key]!==undefined && draft[f.key]!==null){
+        updates[f.key] = draft[f.key];
+        hasAny = true;
+      }
+    });
+    if(!hasAny){ alert('Enter at least one value.'); return; }
+    const existingIdx = bodyLogs.findIndex(b=>b.date===date);
+    if(existingIdx>=0) bodyLogs[existingIdx] = {...bodyLogs[existingIdx], ...updates, date};
+    else { bodyLogs.push({date, ...updates}); bodyLogs.sort((a,b2)=>a.date.localeCompare(b2.date)); }
+    await saveBodyLogs();
+    btn.textContent = 'Saved ✓';
+    btn.classList.add('saved');
+    setTimeout(()=>{ render(); },900);
+  };
+
+  document.querySelectorAll('.fittr-input').forEach(inp=>{
+    inp.oninput = ()=>{ fittrDraft[inp.dataset.key] = inp.value===''? '' : parseFloat(inp.value); };
+  });
+  const fittrDateInp = document.getElementById('fittrEntryDate');
+  if(fittrDateInp) fittrDateInp.onchange = ()=>{ loadFittrDraftFromDate(fittrDateInp.value); render(); };
+
+  const fittrBtn = document.getElementById('saveFittrBtn');
+  if(fittrBtn) fittrBtn.onclick = async ()=>{
+    const date = document.getElementById('fittrEntryDate').value || fittrDraftDate;
+    let hasAny = false;
+    const updates = {};
+    BODY_FIELDS.filter(f=>f.group==='fittr').forEach(f=>{
+      if(fittrDraft[f.key]!=='' && fittrDraft[f.key]!==undefined && fittrDraft[f.key]!==null){
+        updates[f.key] = fittrDraft[f.key];
+        hasAny = true;
+      }
+    });
+    if(!hasAny){ alert('Enter at least one value.'); return; }
+    const existingIdx = bodyLogs.findIndex(b=>b.date===date);
+    if(existingIdx>=0) bodyLogs[existingIdx] = {...bodyLogs[existingIdx], ...updates, date};
+    else { bodyLogs.push({date, ...updates}); bodyLogs.sort((a,b2)=>a.date.localeCompare(b2.date)); }
+    await saveBodyLogs();
+    fittrBtn.textContent = 'Saved ✓';
+    fittrBtn.classList.add('saved');
+    setTimeout(()=>{ render(); },900);
+  };
+
+  const exportBtn = document.getElementById('exportBtn');
+  if(exportBtn) exportBtn.onclick = ()=>{
+    const backup = JSON.stringify({bodyLogs}, null, 0);
+    const ta = document.getElementById('backupText');
+    const copyBackupBtn = document.getElementById('copyBackupBtn');
+    ta.value = backup;
+    ta.style.display = 'block';
+    copyBackupBtn.style.display = 'block';
+  };
+  const copyBackupBtn = document.getElementById('copyBackupBtn');
+  if(copyBackupBtn) copyBackupBtn.onclick = async ()=>{
+    const ta = document.getElementById('backupText');
+    try{ await navigator.clipboard.writeText(ta.value); }
+    catch(e){ ta.removeAttribute('readonly'); ta.select(); document.execCommand('copy'); ta.setAttribute('readonly','true'); }
+    copyBackupBtn.textContent = 'Copied ✓';
+    setTimeout(()=>{ copyBackupBtn.textContent = 'Copy backup'; },1500);
+  };
+  const importBtn = document.getElementById('importBtn');
+  if(importBtn) importBtn.onclick = ()=>{
+    const raw = document.getElementById('importText').value.trim();
+    if(!raw){ alert('Paste a backup first.'); return; }
+    try{
+      const data = JSON.parse(raw);
+      if(data.bodyLogs) bodyLogs = data.bodyLogs;
+      saveBodyLogs();
+      alert('Backup restored.');
+      initDraft();
+      render();
+    }catch(e){
+      alert('That doesn\'t look like a valid backup — check you copied the whole thing.');
+    }
+  };
+}
+
+(function init(){
+  loadAll();
+  initDraft();
+  render();
+})();
+</script>
+</body>
+</html>

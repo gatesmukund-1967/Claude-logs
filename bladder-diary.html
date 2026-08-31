@@ -1,0 +1,573 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>Bladder Diary</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='22' fill='%2364c8d8'/%3E%3Ctext x='50' y='68' font-size='54' text-anchor='middle'%3E%F0%9F%92%A7%3C/text%3E%3C/svg%3E">
+<link rel="apple-touch-icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='22' fill='%2364c8d8'/%3E%3Ctext x='50' y='68' font-size='54' text-anchor='middle'%3E%F0%9F%92%A7%3C/text%3E%3C/svg%3E">
+<meta name="theme-color" content="#64c8d8">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600&family=IBM+Plex+Mono:wght@500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#12141a;
+    --surface:#1b1f27;
+    --surface2:#242933;
+    --border:#2e3440;
+    --text:#edeff2;
+    --muted:#8a9099;
+    --muted2:#5b6068;
+    --intake:#64c8d8;
+    --output:#f0c860;
+    --med:#d98cd9;
+    --danger:#e0616b;
+    --radius:14px;
+  }
+  *{box-sizing:border-box; -webkit-tap-highlight-color:transparent;}
+  html,body{margin:0; padding:0; background:var(--bg); color:var(--text); font-weight:500;
+    font-family:'Inter',system-ui,sans-serif; -webkit-font-smoothing:antialiased;}
+  body{padding-bottom:96px;}
+  h1,h2,h3{font-family:'Space Grotesk',sans-serif; margin:0; font-weight:700;}
+  .mono{font-family:'IBM Plex Mono',monospace;}
+  button{font-family:inherit; border:none; background:none; color:inherit; cursor:pointer;}
+  input,select{font-family:inherit; color:var(--text); background:var(--surface2); border:1px solid var(--border);
+    border-radius:10px; padding:8px 10px; font-size:15px; width:100%;}
+  input:focus,select:focus{outline:2px solid var(--intake); outline-offset:1px;}
+
+  header{position:sticky; top:0; z-index:20; background:var(--bg); padding:18px 16px 0;
+    border-bottom:1px solid var(--border);}
+  .brand{display:flex; align-items:baseline; justify-content:space-between; padding-bottom:12px;}
+  .brand h1{font-size:20px; letter-spacing:.2px; font-weight:700;}
+  .brand .date{font-size:12px; color:var(--muted); font-family:'IBM Plex Mono',monospace;}
+
+  .tabs{display:flex; gap:4px; overflow-x:auto; padding-bottom:10px;}
+  .tab-btn{flex-shrink:0; font-size:13px; font-weight:600; color:var(--muted); padding:8px 14px;
+    border-radius:10px 10px 0 0; white-space:nowrap;}
+  .tab-btn.active{color:var(--text); background:var(--surface);}
+
+  main{padding:16px;}
+  .section-label{font-size:11px; text-transform:uppercase; letter-spacing:.08em; color:var(--muted2);
+    margin:18px 4px 8px; font-weight:600;}
+  .section-label:first-child{margin-top:0;}
+
+  .card{background:var(--surface); border:1px solid var(--border); border-radius:var(--radius);
+    padding:14px; margin-bottom:10px;}
+  .meta{font-size:11.5px; color:var(--muted);}
+  .name{font-size:15px; font-weight:600;}
+
+  .dash-row{display:flex; gap:8px; margin-bottom:4px;}
+  .dash-card{flex:1; min-width:0; background:var(--surface); border:1px solid var(--border);
+    border-radius:var(--radius); padding:12px; text-align:center;}
+  .dash-val{font-size:24px; font-weight:700; font-family:'IBM Plex Mono',monospace; margin-top:2px;}
+
+  .quick-grid{display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-bottom:10px;}
+  .quick-btn{background:var(--surface2); border:1px solid var(--border); border-radius:12px;
+    padding:14px 10px; font-size:14px; font-weight:600; text-align:center;}
+  .quick-btn:active{opacity:.7;}
+
+  .save-btn{width:100%; font-weight:700; font-size:15px; padding:14px; border-radius:12px;
+    text-align:center; margin-top:6px; background:var(--intake); color:#0a1a1d;}
+  .save-btn.out{background:var(--output); color:#2a1f08;}
+  .save-btn.saved{background:var(--surface2); color:var(--intake);}
+  .save-btn:active{opacity:.85;}
+
+  .log-row{display:flex; justify-content:space-between; align-items:center;
+    background:var(--surface); border:1px solid var(--border); border-radius:12px;
+    padding:11px 14px; margin-bottom:6px;}
+  .log-time{font-family:'IBM Plex Mono',monospace; font-size:13px; color:var(--muted);}
+  .log-what{font-size:14px; font-weight:600;}
+  .log-amt{font-family:'IBM Plex Mono',monospace; font-size:15px; font-weight:700;}
+  .icon-btn{font-size:13px; color:var(--muted); padding:4px 8px;}
+  .icon-btn.del{color:var(--danger);}
+
+  .med-toggle{display:flex; gap:8px; margin-bottom:10px;}
+  .med-btn{flex:1; background:var(--surface2); border:1px solid var(--border); border-radius:12px;
+    padding:12px; font-size:13.5px; font-weight:600; text-align:center; color:var(--muted);}
+  .med-btn.active{background:var(--med); color:#1f0a1f; border-color:var(--med);}
+  .med-btn.ctx.active{background:var(--intake); color:#0a1a1d; border-color:var(--intake);}
+
+  .trend-table-wrap{overflow-x:auto; border:1px solid var(--border); border-radius:var(--radius);
+    background:var(--surface); margin-bottom:14px;}
+  table.trend-table{border-collapse:collapse; width:100%; font-size:12px;}
+  table.trend-table th, table.trend-table td{padding:8px 9px; text-align:right; white-space:nowrap;
+    border-bottom:1px solid var(--border);}
+  table.trend-table th:first-child, table.trend-table td:first-child{text-align:left; position:sticky; left:0;
+    background:var(--surface); font-family:'IBM Plex Mono',monospace; color:var(--muted);}
+  table.trend-table th{color:var(--muted); font-weight:600; font-size:10.5px; text-transform:uppercase;}
+  table.trend-table td{font-family:'IBM Plex Mono',monospace; color:var(--text);}
+  table.trend-table tr:last-child td{border-bottom:none;}
+  table.trend-table th.latest, table.trend-table td.latest{background:rgba(100,200,216,0.10); color:var(--intake); font-weight:600;}
+
+  .empty{text-align:center; padding:28px 20px; color:var(--muted); font-size:13.5px;}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="brand">
+    <h1>Bladder Diary</h1>
+    <div class="date mono" id="todayLabel"></div>
+  </div>
+  <div class="tabs" id="tabs"></div>
+</header>
+
+<main id="main"></main>
+
+<script>
+const STORAGE_INTAKE = 'bladderIntake';
+const STORAGE_OUTPUT = 'bladderOutput';
+const STORAGE_MEDDAYS = 'bladderMedDays';
+const STORAGE_FLIGHTHRS = 'bladderFlightHours';
+
+const TABS = [
+  {id:'intake', label:'Intake'},
+  {id:'output', label:'Output'},
+  {id:'report', label:'Report'},
+];
+
+// Standard drink categories — deliberately limited to clear/discrete liquids.
+// Food-based liquids (rasam, sambar, curd) are excluded because they're
+// inconsistently estimated and add noise rather than signal. Use "Other" if needed.
+const DRINK_TYPES = [
+  {id:'water100', label:'Water', defaultMl:100},
+  {id:'water', label:'Water', defaultMl:200},
+  {id:'coffee', label:'Black Coffee', defaultMl:150},
+  {id:'juice', label:'Juice', defaultMl:200},
+  {id:'tea', label:'Tea', defaultMl:150},
+  {id:'other', label:'Other', defaultMl:200},
+];
+
+let intakeLogs = [];   // {id, date, time, type, label, ml, ctx}
+let outputLogs = [];   // {id, date, time, ml, ctx}
+let medDays = {};      // date -> true (on medication) / false (off)
+let flightHours = {};  // date -> hours spent in flight that day (denominator for rates)
+let logMode = 'ground'; // sticky: which context new entries get tagged with
+let activeTab = 'intake';
+let viewDate = new Date().toISOString().slice(0,10);
+
+function uid(){ return Date.now().toString(36)+Math.random().toString(36).slice(2,6); }
+function todayISO(){ return new Date().toISOString().slice(0,10); }
+function nowTime(){
+  const d = new Date();
+  return String(d.getHours()).padStart(2,'0')+':'+String(d.getMinutes()).padStart(2,'0');
+}
+function fmtDateDDMM(iso){
+  const [y,m,d] = iso.split('-');
+  return `${d}/${m}`;
+}
+function todayLabel(){
+  const d = new Date();
+  const dd = String(d.getDate()).padStart(2,'0');
+  const mmm = d.toLocaleDateString(undefined,{month:'short'});
+  const wd = d.toLocaleDateString(undefined,{weekday:'short'});
+  return `${wd}, ${dd} ${mmm}`;
+}
+
+function save(key, val){
+  try{ localStorage.setItem(key, JSON.stringify(val)); }
+  catch(e){ console.warn('save failed', e); alert('Could not save — local storage may be blocked.'); }
+}
+function loadAll(){
+  try{
+    const i = localStorage.getItem(STORAGE_INTAKE);
+    if(i) intakeLogs = JSON.parse(i);
+    const o = localStorage.getItem(STORAGE_OUTPUT);
+    if(o) outputLogs = JSON.parse(o);
+    const m = localStorage.getItem(STORAGE_MEDDAYS);
+    if(m) medDays = JSON.parse(m);
+    const c = localStorage.getItem(STORAGE_FLIGHTHRS);
+    if(c) flightHours = JSON.parse(c);
+  }catch(e){ console.warn('load failed', e); }
+}
+
+function dayIntake(date){ return intakeLogs.filter(l=>l.date===date).reduce((s,l)=>s+(l.ml||0),0); }
+function dayOutput(date){ return outputLogs.filter(l=>l.date===date).reduce((s,l)=>s+(l.ml||0),0); }
+function dayVoids(date){ return outputLogs.filter(l=>l.date===date).length; }
+// Nocturia = voids between 22:00 and 06:00
+function dayNightVoids(date){
+  return outputLogs.filter(l=>{
+    if(l.date!==date) return false;
+    const h = parseInt((l.time||'').split(':')[0]);
+    return h>=22 || h<6;
+  }).length;
+}
+function dayMaxVoid(date){
+  const vals = outputLogs.filter(l=>l.date===date).map(l=>l.ml||0);
+  return vals.length ? Math.max(...vals) : 0;
+}
+function allDates(){
+  const s = new Set([...intakeLogs.map(l=>l.date), ...outputLogs.map(l=>l.date)]);
+  return [...s].sort();
+}
+
+function renderDayHeader(){
+  const onMed = medDays[viewDate];
+  const fh = flightHours[viewDate];
+  const anyFlight = [...intakeLogs, ...outputLogs].some(l=>l.date===viewDate && l.ctx==='flight');
+  return `<div class="section-label">Date</div><div class="card">
+      <input type="date" id="viewDate" value="${viewDate}">
+    </div>
+    <div class="section-label">Medication that day</div>
+    <div class="med-toggle">
+      <button class="med-btn ${onMed===true?'active':''}" data-med="on">On medication</button>
+      <button class="med-btn ${onMed===false?'active':''}" data-med="off">Off medication</button>
+    </div>
+    <div class="section-label">Logging new entries as</div>
+    <div class="med-toggle">
+      <button class="med-btn ctx ${logMode==='ground'?'active':''}" data-mode="ground">On ground</button>
+      <button class="med-btn ctx ${logMode==='flight'?'active':''}" data-mode="flight">✈ In flight</button>
+    </div>
+    ${anyFlight ? `<div class="card" style="margin-top:-2px;">
+      <div style="display:flex; align-items:center; gap:8px;">
+        <span class="meta" style="flex:1;">Hours in flight this day<br><span style="font-size:10.5px;">needed to compare a 4h flight against a 13h one</span></span>
+        <input type="number" inputmode="decimal" id="flightHrs" value="${fh??''}" placeholder="hrs" style="width:80px; text-align:center;">
+      </div>
+    </div>` : ''}
+    <div class="dash-row">
+      <div class="dash-card"><div class="meta">Intake</div><div class="dash-val" style="color:var(--intake);">${dayIntake(viewDate)}<span style="font-size:13px;">ml</span></div></div>
+      <div class="dash-card"><div class="meta">Output</div><div class="dash-val" style="color:var(--output);">${dayOutput(viewDate)}<span style="font-size:13px;">ml</span></div></div>
+      <div class="dash-card"><div class="meta">Voids</div><div class="dash-val">${dayVoids(viewDate)}</div></div>
+    </div>`;
+}
+
+function renderIntakeTab(){
+  let html = renderDayHeader();
+  html += `<div class="section-label">Quick add</div><div class="quick-grid">`;
+  DRINK_TYPES.forEach(d=>{
+    html += `<button class="quick-btn" data-drink="${d.id}">${d.label}<br><span style="font-size:11px; color:var(--muted); font-weight:400;">${d.defaultMl}ml</span></button>`;
+  });
+  html += `</div>`;
+
+  html += `<div class="section-label">Custom entry</div><div class="card">
+    <div style="display:flex; gap:8px; margin-bottom:8px;">
+      <select id="customType" style="flex:2;">
+        ${DRINK_TYPES.filter((d,i,arr)=>arr.findIndex(x=>x.label===d.label)===i).map(d=>`<option value="${d.id}">${d.label}</option>`).join('')}
+      </select>
+      <input type="number" inputmode="numeric" id="customMl" placeholder="ml" style="flex:1;">
+    </div>
+    <div style="display:flex; gap:8px; align-items:center;">
+      <input type="time" id="customTime" value="${nowTime()}" style="flex:1;">
+      <button class="save-btn" id="addIntakeBtn" style="margin-top:0; flex:1;">Add</button>
+    </div>
+  </div>`;
+
+  const logs = intakeLogs.filter(l=>l.date===viewDate).sort((a,b)=>(a.time||'').localeCompare(b.time||''));
+  html += `<div class="section-label">Logged — ${fmtDateDDMM(viewDate)}</div>`;
+  if(!logs.length) html += `<div class="empty">Nothing logged yet.</div>`;
+  logs.forEach(l=>{
+    html += `<div class="log-row">
+      <div><div class="log-what">${l.label}${l.ctx==='flight'?' <span style="font-size:11px; color:var(--intake);">✈</span>':''}</div><div class="log-time">${l.time||''}</div></div>
+      <div style="display:flex; align-items:center; gap:8px;">
+        <button class="icon-btn" data-flip="intake|${l.id}" title="Toggle ground/flight">${l.ctx==='flight'?'✈':'⌂'}</button>
+        <div class="log-amt" style="color:var(--intake);">${l.ml}ml</div>
+        <button class="icon-btn del" data-del-intake="${l.id}">✕</button>
+      </div>
+    </div>`;
+  });
+  return html;
+}
+
+function renderOutputTab(){
+  let html = renderDayHeader();
+  html += `<div class="section-label">Quick add</div><div class="quick-grid">`;
+  [100,150,200,250,300,400].forEach(ml=>{
+    html += `<button class="quick-btn" data-void="${ml}">${ml} ml</button>`;
+  });
+  html += `</div>`;
+
+  html += `<div class="section-label">Custom entry</div><div class="card">
+    <div style="display:flex; gap:8px; align-items:center;">
+      <input type="number" inputmode="numeric" id="voidMl" placeholder="ml" style="flex:1;">
+      <input type="time" id="voidTime" value="${nowTime()}" style="flex:1;">
+      <button class="save-btn out" id="addOutputBtn" style="margin-top:0; flex:1;">Add</button>
+    </div>
+  </div>`;
+
+  const logs = outputLogs.filter(l=>l.date===viewDate).sort((a,b)=>(a.time||'').localeCompare(b.time||''));
+  html += `<div class="section-label">Logged — ${fmtDateDDMM(viewDate)} · ${dayNightVoids(viewDate)} overnight</div>`;
+  if(!logs.length) html += `<div class="empty">Nothing logged yet.</div>`;
+  logs.forEach(l=>{
+    const h = parseInt((l.time||'').split(':')[0]);
+    const night = (h>=22 || h<6);
+    html += `<div class="log-row">
+      <div><div class="log-what">Void${l.ctx==='flight'?' <span style="font-size:11px; color:var(--intake);">✈</span>':''}${night?' <span style="font-size:11px; color:var(--muted); font-weight:400;">· overnight</span>':''}</div><div class="log-time">${l.time||''}</div></div>
+      <div style="display:flex; align-items:center; gap:8px;">
+        <button class="icon-btn" data-flip="output|${l.id}" title="Toggle ground/flight">${l.ctx==='flight'?'✈':'⌂'}</button>
+        <div class="log-amt" style="color:var(--output);">${l.ml}ml</div>
+        <button class="icon-btn del" data-del-output="${l.id}">✕</button>
+      </div>
+    </div>`;
+  });
+  return html;
+}
+
+function buildSummaryTable(){
+  const dates = allDates().slice(-14);
+  if(!dates.length) return '<div class="empty">No data yet.</div>';
+  const head = `<tr><th>Metric</th>${dates.map((d,i)=>`<th class="${i===dates.length-1?'latest':''}">${fmtDateDDMM(d)}</th>`).join('')}</tr>`;
+  const rows = [
+    {label:'Med', fn:d=> medDays[d]===true?'On' : medDays[d]===false?'Off' : '—'},
+    {label:'Flight hrs', fn:d=> flightHours[d] ? flightHours[d] : '—'},
+    {label:'Flight voids', fn:d=>{
+      const n = outputLogs.filter(l=>l.date===d && l.ctx==='flight').length;
+      return n || '—';
+    }},
+    {label:'Intake (ml)', fn:d=>dayIntake(d)||'—'},
+    {label:'Output (ml)', fn:d=>dayOutput(d)||'—'},
+    {label:'Voids', fn:d=>dayVoids(d)||'—'},
+    {label:'Overnight', fn:d=>dayNightVoids(d)||'—'},
+    {label:'Max void', fn:d=>dayMaxVoid(d)||'—'},
+  ].map(r=>`<tr><td>${r.label}</td>${dates.map((d,i)=>`<td class="${i===dates.length-1?'latest':''}">${r.fn(d)}</td>`).join('')}</tr>`).join('');
+  return `<div class="trend-table-wrap"><table class="trend-table">${head}${rows}</table></div>`;
+}
+
+function buildReportText(){
+  const dates = allDates();
+  let lines = [];
+  lines.push(`Bladder diary — generated ${fmtDateDDMM(todayISO())}/2026`);
+  lines.push('');
+  if(!dates.length){ lines.push('No data logged yet.'); return lines.join('\n'); }
+
+  dates.forEach(date=>{
+    const med = medDays[date]===true?'ON medication' : medDays[date]===false?'OFF medication' : 'medication not recorded';
+    const fh = flightHours[date];
+    const ctx = fh ? ` · ${fh}h in flight` : '';
+    lines.push(`## ${fmtDateDDMM(date)} — ${med}${ctx}`);
+    lines.push(`Total intake: ${dayIntake(date)} ml`);
+    lines.push(`Total output: ${dayOutput(date)} ml across ${dayVoids(date)} voids (${dayNightVoids(date)} overnight, 22:00-06:00)`);
+    if(dayMaxVoid(date)) lines.push(`Largest single void: ${dayMaxVoid(date)} ml`);
+    const outs = outputLogs.filter(l=>l.date===date).sort((a,b)=>(a.time||'').localeCompare(b.time||''));
+    if(outs.length) lines.push(`Voids: ${outs.map(l=>`${l.time} ${l.ml}ml${l.ctx==='flight'?' (flight)':''}`).join(', ')}`);
+    const ins = intakeLogs.filter(l=>l.date===date).sort((a,b)=>(a.time||'').localeCompare(b.time||''));
+    if(ins.length) lines.push(`Intake: ${ins.map(l=>`${l.time} ${l.label} ${l.ml}ml${l.ctx==='flight'?' (flight)':''}`).join(', ')}`);
+    lines.push('');
+  });
+
+  // Aggregate on vs off medication, which is the whole point of the diary
+  const onDays = dates.filter(d=>medDays[d]===true);
+  const offDays = dates.filter(d=>medDays[d]===false);
+  const avg = (arr,fn)=> arr.length ? (arr.reduce((s,d)=>s+fn(d),0)/arr.length).toFixed(0) : '—';
+  if(onDays.length && offDays.length){
+    lines.push('## On vs off medication (daily averages)');
+    lines.push(`ON  (${onDays.length} days): intake ${avg(onDays,dayIntake)}ml, output ${avg(onDays,dayOutput)}ml, ${avg(onDays,dayVoids)} voids, ${avg(onDays,dayNightVoids)} overnight, max void ${avg(onDays,dayMaxVoid)}ml`);
+    lines.push(`OFF (${offDays.length} days): intake ${avg(offDays,dayIntake)}ml, output ${avg(offDays,dayOutput)}ml, ${avg(offDays,dayVoids)} voids, ${avg(offDays,dayNightVoids)} overnight, max void ${avg(offDays,dayMaxVoid)}ml`);
+    lines.push('');
+  }
+
+  // Ground vs flight, aggregated per ENTRY (not per day), since a single day can
+  // contain both. Normalised to per-hour rates because flights vary from 4h to 13h.
+  const flightVoids = outputLogs.filter(l=>l.ctx==='flight');
+  const groundVoids = outputLogs.filter(l=>l.ctx!=='flight');
+  const flightIntake = intakeLogs.filter(l=>l.ctx==='flight');
+  const groundIntake = intakeLogs.filter(l=>l.ctx!=='flight');
+  const totalFlightHrs = dates.reduce((s,d)=>s+(flightHours[d]||0),0);
+
+  if(flightVoids.length){
+    lines.push('## Ground vs flight (per-entry)');
+    if(totalFlightHrs>0){
+      const fRate = (flightVoids.length/totalFlightHrs).toFixed(2);
+      const fMl = flightVoids.reduce((s,l)=>s+(l.ml||0),0);
+      const fIn = flightIntake.reduce((s,l)=>s+(l.ml||0),0);
+      lines.push(`FLIGHT: ${flightVoids.length} voids over ${totalFlightHrs.toFixed(1)} flight hours = ${fRate} voids/hour`);
+      lines.push(`        ${fMl}ml voided, ${fIn}ml drunk, avg void ${(fMl/flightVoids.length).toFixed(0)}ml`);
+    } else {
+      lines.push(`FLIGHT: ${flightVoids.length} voids logged, but no flight hours recorded — enter hours in flight on those days to get a comparable rate.`);
+    }
+    // Ground denominator: assume ~16 waking hours per day, minus any flight hours
+    const groundHrs = Math.max(0, dates.length*16 - totalFlightHrs);
+    if(groundVoids.length && groundHrs>0){
+      const gRate = (groundVoids.length/groundHrs).toFixed(2);
+      const gMl = groundVoids.reduce((s,l)=>s+(l.ml||0),0);
+      const gIn = groundIntake.reduce((s,l)=>s+(l.ml||0),0);
+      lines.push(`GROUND: ${groundVoids.length} voids over ~${groundHrs.toFixed(0)} waking ground hours = ${gRate} voids/hour`);
+      lines.push(`        ${gMl}ml voided, ${gIn}ml drunk, avg void ${(gMl/groundVoids.length).toFixed(0)}ml`);
+    }
+    lines.push('');
+    lines.push('Note: ground hours assume ~16 waking hours/day, so the ground rate is approximate. Flight days also differ in fluid intake, caffeine, sleep timing and time zone as well as cabin pressure and humidity — a difference here is suggestive, not conclusive.');
+    lines.push('');
+  }
+  return lines.join('\n');
+}
+
+function renderReportTab(){
+  let html = `<div class="section-label">Summary</div>${buildSummaryTable()}`;
+  html += `<div class="section-label" style="margin-top:20px;">Shareable report</div>
+    <div class="card">
+      <textarea id="reportText" readonly style="width:100%; min-height:260px; background:var(--surface2);
+        border:1px solid var(--border); border-radius:10px; padding:10px; color:var(--text);
+        font-family:'IBM Plex Mono',monospace; font-size:11.5px; line-height:1.6;">${buildReportText()}</textarea>
+    </div>
+    <button class="save-btn" id="copyReportBtn" style="background:var(--surface2); color:var(--intake);">Copy report</button>
+    <div class="meta" style="margin-top:10px; text-align:center;">Paste this into a message for your urologist, or into a chat with Claude/ChatGPT.</div>`;
+
+  html += `<div class="section-label" style="margin-top:24px;">Backup &amp; restore</div>
+    <div class="card">
+      <div class="meta" style="margin-bottom:10px; line-height:1.5;">
+        Data lives in this browser only. Export a backup before replacing this file with a newer version.
+      </div>
+      <button class="save-btn" id="exportBtn" style="background:var(--surface2); color:var(--text); margin-bottom:14px;">Export backup</button>
+      <textarea id="backupText" readonly style="width:100%; min-height:90px; background:var(--surface2);
+        border:1px solid var(--border); border-radius:10px; padding:10px; color:var(--text);
+        font-family:'IBM Plex Mono',monospace; font-size:10.5px; display:none;"></textarea>
+      <button class="save-btn" id="copyBackupBtn" style="background:var(--surface2); color:var(--intake); display:none; margin-top:8px;">Copy backup</button>
+      <div class="meta" style="margin-top:16px; margin-bottom:6px;">Paste a backup below to restore:</div>
+      <textarea id="importText" placeholder="Paste backup JSON here" style="width:100%; min-height:90px; background:var(--surface2);
+        border:1px solid var(--border); border-radius:10px; padding:10px; color:var(--text);
+        font-family:'IBM Plex Mono',monospace; font-size:10.5px;"></textarea>
+      <button class="save-btn" id="importBtn" style="margin-top:8px;">Restore from backup</button>
+    </div>`;
+  return html;
+}
+
+function render(){
+  document.getElementById('todayLabel').textContent = todayLabel();
+  document.getElementById('tabs').innerHTML = TABS.map(t=>
+    `<button class="tab-btn ${activeTab===t.id?'active':''}" data-tab="${t.id}">${t.label}</button>`).join('');
+
+  let html = '';
+  if(activeTab==='intake') html = renderIntakeTab();
+  else if(activeTab==='output') html = renderOutputTab();
+  else if(activeTab==='report') html = renderReportTab();
+
+  document.getElementById('main').innerHTML = html;
+  attachEvents();
+}
+
+function attachEvents(){
+  document.querySelectorAll('[data-tab]').forEach(b=>{
+    b.onclick = ()=>{ activeTab = b.dataset.tab; render(); };
+  });
+
+  const vd = document.getElementById('viewDate');
+  if(vd) vd.onchange = ()=>{ viewDate = vd.value; render(); };
+
+  document.querySelectorAll('[data-med]').forEach(b=>{
+    b.onclick = ()=>{
+      const val = b.dataset.med==='on';
+      medDays[viewDate] = (medDays[viewDate]===val) ? undefined : val;
+      if(medDays[viewDate]===undefined) delete medDays[viewDate];
+      save(STORAGE_MEDDAYS, medDays);
+      render();
+    };
+  });
+
+  document.querySelectorAll('[data-mode]').forEach(b=>{
+    b.onclick = ()=>{ logMode = b.dataset.mode; render(); };
+  });
+  document.querySelectorAll('[data-flip]').forEach(b=>{
+    b.onclick = ()=>{
+      const [kind, id] = b.dataset.flip.split('|');
+      const arr = kind==='intake' ? intakeLogs : outputLogs;
+      const item = arr.find(l=>l.id===id);
+      if(!item) return;
+      item.ctx = item.ctx==='flight' ? 'ground' : 'flight';
+      save(kind==='intake'?STORAGE_INTAKE:STORAGE_OUTPUT, arr);
+      render();
+    };
+  });
+  const fhInp = document.getElementById('flightHrs');
+  if(fhInp) fhInp.onchange = ()=>{
+    const v = parseFloat(fhInp.value);
+    if(isNaN(v)) delete flightHours[viewDate]; else flightHours[viewDate] = v;
+    save(STORAGE_FLIGHTHRS, flightHours);
+  };
+
+  document.querySelectorAll('[data-drink]').forEach(b=>{
+    b.onclick = ()=>{
+      const d = DRINK_TYPES.find(x=>x.id===b.dataset.drink);
+      intakeLogs.push({id:uid(), date:viewDate, time:nowTime(), type:d.id, label:d.label, ml:d.defaultMl, ctx:logMode});
+      save(STORAGE_INTAKE, intakeLogs);
+      render();
+    };
+  });
+  const addIntakeBtn = document.getElementById('addIntakeBtn');
+  if(addIntakeBtn) addIntakeBtn.onclick = ()=>{
+    const ml = parseFloat(document.getElementById('customMl').value);
+    if(!ml){ alert('Enter an amount in ml.'); return; }
+    const typeId = document.getElementById('customType').value;
+    const d = DRINK_TYPES.find(x=>x.id===typeId);
+    const time = document.getElementById('customTime').value || nowTime();
+    intakeLogs.push({id:uid(), date:viewDate, time, type:d.id, label:d.label, ml, ctx:logMode});
+    save(STORAGE_INTAKE, intakeLogs);
+    render();
+  };
+  document.querySelectorAll('[data-del-intake]').forEach(b=>{
+    b.onclick = ()=>{
+      intakeLogs = intakeLogs.filter(l=>l.id!==b.dataset.delIntake);
+      save(STORAGE_INTAKE, intakeLogs);
+      render();
+    };
+  });
+
+  document.querySelectorAll('[data-void]').forEach(b=>{
+    b.onclick = ()=>{
+      outputLogs.push({id:uid(), date:viewDate, time:nowTime(), ml:parseFloat(b.dataset.void), ctx:logMode});
+      save(STORAGE_OUTPUT, outputLogs);
+      render();
+    };
+  });
+  const addOutputBtn = document.getElementById('addOutputBtn');
+  if(addOutputBtn) addOutputBtn.onclick = ()=>{
+    const ml = parseFloat(document.getElementById('voidMl').value);
+    if(!ml){ alert('Enter an amount in ml.'); return; }
+    const time = document.getElementById('voidTime').value || nowTime();
+    outputLogs.push({id:uid(), date:viewDate, time, ml, ctx:logMode});
+    save(STORAGE_OUTPUT, outputLogs);
+    render();
+  };
+  document.querySelectorAll('[data-del-output]').forEach(b=>{
+    b.onclick = ()=>{
+      outputLogs = outputLogs.filter(l=>l.id!==b.dataset.delOutput);
+      save(STORAGE_OUTPUT, outputLogs);
+      render();
+    };
+  });
+
+  const copyBtn = document.getElementById('copyReportBtn');
+  if(copyBtn) copyBtn.onclick = async ()=>{
+    const ta = document.getElementById('reportText');
+    try{ await navigator.clipboard.writeText(ta.value); }
+    catch(e){ ta.removeAttribute('readonly'); ta.select(); document.execCommand('copy'); ta.setAttribute('readonly','true'); }
+    copyBtn.textContent = 'Copied ✓';
+    setTimeout(()=>{ copyBtn.textContent = 'Copy report'; },1500);
+  };
+
+  const exportBtn = document.getElementById('exportBtn');
+  if(exportBtn) exportBtn.onclick = ()=>{
+    document.getElementById('backupText').value = JSON.stringify({intakeLogs, outputLogs, medDays, flightHours});
+    document.getElementById('backupText').style.display = 'block';
+    document.getElementById('copyBackupBtn').style.display = 'block';
+  };
+  const copyBackupBtn = document.getElementById('copyBackupBtn');
+  if(copyBackupBtn) copyBackupBtn.onclick = async ()=>{
+    const ta = document.getElementById('backupText');
+    try{ await navigator.clipboard.writeText(ta.value); }
+    catch(e){ ta.removeAttribute('readonly'); ta.select(); document.execCommand('copy'); ta.setAttribute('readonly','true'); }
+    copyBackupBtn.textContent = 'Copied ✓';
+    setTimeout(()=>{ copyBackupBtn.textContent = 'Copy backup'; },1500);
+  };
+  const importBtn = document.getElementById('importBtn');
+  if(importBtn) importBtn.onclick = ()=>{
+    const raw = document.getElementById('importText').value.trim();
+    if(!raw){ alert('Paste a backup first.'); return; }
+    try{
+      const d = JSON.parse(raw);
+      if(d.intakeLogs) intakeLogs = d.intakeLogs;
+      if(d.outputLogs) outputLogs = d.outputLogs;
+      if(d.medDays) medDays = d.medDays;
+      if(d.flightHours) flightHours = d.flightHours;
+      save(STORAGE_INTAKE, intakeLogs); save(STORAGE_OUTPUT, outputLogs); save(STORAGE_MEDDAYS, medDays); save(STORAGE_FLIGHTHRS, flightHours);
+      alert('Backup restored.');
+      render();
+    }catch(e){ alert('That doesn\'t look like a valid backup.'); }
+  };
+}
+
+(function init(){
+  loadAll();
+  render();
+})();
+</script>
+</body>
+</html>
