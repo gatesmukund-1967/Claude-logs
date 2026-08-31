@@ -4,8 +4,8 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <title>Training Log</title>
-<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='22' fill='%236fcf97'/%3E%3Ctext x='50' y='68' font-size='54' text-anchor='middle'%3E%F0%9F%8F%8B%3C/text%3E%3C/svg%3E">
-<link rel="apple-touch-icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='22' fill='%236fcf97'/%3E%3Ctext x='50' y='68' font-size='54' text-anchor='middle'%3E%F0%9F%8F%8B%3C/text%3E%3C/svg%3E">
+<link rel="icon" type="image/png" href="workout-icon.png">
+<link rel="apple-touch-icon" href="workout-icon.png">
 <meta name="theme-color" content="#6fcf97">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600&family=IBM+Plex+Mono:wght@500;600&display=swap" rel="stylesheet">
@@ -170,16 +170,16 @@ const DEFAULT_EXERCISES = [
   {id:'calf-raise-pull', day:'pull', name:'Standing Calf Raise', unit:'kg', sets:s4(10,15)},
   {id:'wall-sit-pull', day:'pull', name:'Wall Sit', unit:'sec', sets:d4(45)},
   // LEGS / KNEE (physio: VMO + sartorius — avoid lunges)
-  {id:'box-squat', day:'legs', name:'Box Squat (goblet)', unit:'kg', sets:s4(8,12)},
+  {id:'box-squat', day:'legs', name:'Box Squat (goblet)', unit:'kg', sets:s4(8,12), occasional:true},
   {id:'wall-sit', day:'legs', name:'Wall Sit', unit:'sec', sets:d4(45)},
   {id:'dead-hang-legs', day:'legs', name:'Dead Hang (close, palms-facing)', unit:'sec', sets:d4(30)},
   {id:'farmer-carry-legs', day:'legs', name:'Farmer Carry (each hand)', unit:'kg-sec', sets:wd4(20,60)},
   {id:'suitcase-carry-legs', day:'legs', name:'Suitcase Carry', unit:'kg-sec', sets:wd4(17.5,60)},
   {id:'rdl', day:'legs', name:'RDL', unit:'kg', sets:s4(16,12)},
-  {id:'leg-press', day:'legs', name:'Leg Press', unit:'kg', sets:s4(40,12)},
+  {id:'leg-press', day:'legs', name:'Leg Press', unit:'kg', sets:s4(40,12), occasional:true},
   {id:'leg-extension', day:'legs', name:'Leg Extension', unit:'kg', sets:s4(7.5,15)},
   {id:'leg-curl', day:'legs', name:'Leg Curl', unit:'kg', sets:s4(7.5,12)},
-  {id:'leg-raise', day:'legs', name:'Leg Raise (ankle weights)', unit:'kg', sets:s4(2,15)},
+  {id:'leg-raise', day:'legs', name:'Leg Raise (ankle weights)', unit:'kg', sets:s4(2,15), occasional:true},
   {id:'calf-raise-legs', day:'legs', name:'Calf Raise', unit:'kg', sets:s4(10,15)},
   {id:'plank', day:'legs', name:'Plank', unit:'sec', sets:d4(45)},
   {id:'donkey-kick', day:'legs', name:'Donkey Kick', unit:'reps', sets:r4(15)},
@@ -604,8 +604,23 @@ function loadAll(){
   // already had data saved. Merge in anything missing, matched on id — but never
   // resurrect something you deliberately deleted in Manage.
   DEFAULT_EXERCISES.forEach(seed=>{
-    if(!exercises.some(e=>e.id===seed.id) && !deletedExerciseIds.includes(seed.id)){
-      exercises.push({...seed, sets: seed.sets.map(s=>({...s}))});
+    const idx = exercises.findIndex(e=>e.id===seed.id);
+    if(idx<0){
+      if(!deletedExerciseIds.includes(seed.id)){
+        exercises.push({...seed, sets: seed.sets.map(s=>({...s}))});
+        merged = true;
+      }
+      return;
+    }
+    // Exercise already exists locally — sync definitional metadata (not logged
+    // history) so a later code fix like the "occasional" flag actually reaches
+    // browsers that already cached an older version of this catalog entry.
+    if(exercises[idx].occasional !== seed.occasional){
+      exercises[idx].occasional = seed.occasional;
+      merged = true;
+    }
+    if(exercises[idx].name !== seed.name){
+      exercises[idx].name = seed.name;
       merged = true;
     }
   });
@@ -740,9 +755,10 @@ function initDraft(day, date){
       draft[e.id] = existing;
       return;
     }
-    if(day==='mixed' || day==='interval' || day==='cardio'){
-      // Mixed/Interval/Cardio arm work are optional pick-lists, not a fixed routine —
-      // start blank so untouched exercises don't accidentally get saved with stale numbers.
+    if(day==='mixed' || day==='interval' || day==='cardio' || e.occasional){
+      // Mixed/Interval/Cardio arm work, and any exercise flagged "occasional"
+      // (not done every session — e.g. Box Squat, Leg Press, Leg Raise), start
+      // blank so untouched exercises never look like they've already been logged.
       const blank = s => {
         const b = {};
         if('weight' in s) b.weight='';
