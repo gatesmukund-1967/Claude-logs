@@ -1,0 +1,820 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>Food Log</title>
+<link rel="icon" type="image/png" href="food-icon.png">
+<link rel="apple-touch-icon" href="food-icon.png">
+<meta name="theme-color" content="#f0a860">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600&family=IBM+Plex+Mono:wght@500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#12141a;
+    --surface:#1b1f27;
+    --surface2:#242933;
+    --border:#2e3440;
+    --text:#edeff2;
+    --muted:#8a9099;
+    --muted2:#5b6068;
+    --breakfast:#f0c860;
+    --lunch:#6fcf97;
+    --snack:#d98cd9;
+    --dinner:#7aa2e8;
+    --danger:#e0616b;
+    --radius:14px;
+  }
+  *{box-sizing:border-box; -webkit-tap-highlight-color:transparent;}
+  html,body{margin:0; padding:0; background:var(--bg); color:var(--text); font-weight:500;
+    font-family:'Inter',system-ui,sans-serif; -webkit-font-smoothing:antialiased;}
+  body{padding-bottom:96px;}
+  h1,h2,h3{font-family:'Space Grotesk',sans-serif; margin:0; font-weight:700;}
+  .mono{font-family:'IBM Plex Mono',monospace;}
+  button{font-family:inherit; border:none; background:none; color:inherit; cursor:pointer;}
+  input,select{font-family:inherit; color:var(--text); background:var(--surface2); border:1px solid var(--border);
+    border-radius:10px; padding:8px 10px; font-size:15px; width:100%;}
+  input:focus,select:focus{outline:2px solid var(--lunch); outline-offset:1px;}
+
+  header{position:sticky; top:0; z-index:20; background:var(--bg); padding:18px 16px 0;
+    border-bottom:1px solid var(--border);}
+  .brand{display:flex; align-items:baseline; justify-content:space-between; padding-bottom:12px;}
+  .brand h1{font-size:20px; letter-spacing:.2px; font-weight:700;}
+  .brand .date{font-size:12px; color:var(--muted); font-family:'IBM Plex Mono',monospace;}
+
+  .tabs{display:flex; gap:4px; overflow-x:auto; padding-bottom:10px;}
+  .tab-btn{flex-shrink:0; font-size:13px; font-weight:600; color:var(--muted); padding:8px 13px;
+    border-radius:10px 10px 0 0; white-space:nowrap;}
+  .tab-btn.active{color:var(--text); background:var(--surface);}
+
+  main{padding:16px;}
+  .section-label{font-size:11px; text-transform:uppercase; letter-spacing:.08em; color:var(--muted2);
+    margin:18px 4px 8px; font-weight:600;}
+  .section-label:first-child{margin-top:0;}
+
+  .card{background:var(--surface); border:1px solid var(--border); border-radius:var(--radius);
+    padding:14px; margin-bottom:10px;}
+  .item-name{font-size:14.5px; font-weight:600;}
+  .item-meta{font-size:11.5px; color:var(--muted); margin-top:2px;}
+
+  .item-row{display:flex; align-items:center; gap:10px; background:var(--surface); border:1px solid var(--border);
+    border-radius:12px; padding:12px 14px; margin-bottom:8px;}
+  .item-row input[type=checkbox]{width:20px; height:20px; flex-shrink:0; accent-color:var(--lunch);}
+  .item-row .item-info{flex:1; min-width:0;}
+  .item-row .qty-input{width:56px; flex-shrink:0; text-align:center;}
+
+  .dash-row{display:flex; gap:8px; margin-bottom:4px; overflow-x:auto;}
+  .dash-card{flex:1; min-width:0; background:var(--surface); border:1px solid var(--border);
+    border-radius:var(--radius); padding:12px;}
+  .dash-card .ex-name{font-size:20px !important; font-weight:700;}
+
+  .save-btn{width:100%; font-weight:700; font-size:15px; padding:14px; border-radius:12px;
+    text-align:center; margin-top:6px; background:var(--lunch); color:#0d1a12;}
+  .save-btn.saved{background:var(--surface2); color:var(--lunch);}
+  .save-btn:active{opacity:.85;}
+
+  .empty{text-align:center; padding:32px 20px; color:var(--muted); font-size:13.5px;}
+
+  .trend-table-wrap{overflow-x:auto; border:1px solid var(--border); border-radius:var(--radius);
+    background:var(--surface); margin-bottom:14px;}
+  table.trend-table{border-collapse:collapse; width:100%; font-size:12px;}
+  table.trend-table th, table.trend-table td{padding:8px 9px; text-align:right; white-space:nowrap;
+    border-bottom:1px solid var(--border);}
+  table.trend-table th:first-child, table.trend-table td:first-child{text-align:left; position:sticky; left:0;
+    background:var(--surface); font-family:'IBM Plex Mono',monospace; color:var(--muted);}
+  table.trend-table th{color:var(--muted); font-weight:600; font-size:10.5px; text-transform:uppercase;
+    letter-spacing:.03em;}
+  table.trend-table td{font-family:'IBM Plex Mono',monospace; color:var(--text);}
+  table.trend-table tr:last-child td{border-bottom:none;}
+  table.trend-table th.latest, table.trend-table td.latest{background:rgba(111,207,151,0.10); color:var(--lunch); font-weight:600;}
+
+  .manage-row{display:flex; justify-content:space-between; align-items:center; background:var(--surface);
+    border:1px solid var(--border); border-radius:12px; padding:12px 14px; margin-bottom:8px;}
+  .manage-name{font-size:14px; font-weight:600;}
+  .manage-meta{font-size:11.5px; color:var(--muted); margin-top:2px;}
+  .icon-btn{font-size:13px; color:var(--muted); padding:6px 10px;}
+  .icon-btn.del{color:var(--danger);}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="brand">
+    <h1>Food Log</h1>
+    <div class="date mono" id="todayLabel"></div>
+  </div>
+  <div class="tabs" id="tabs"></div>
+</header>
+
+<main id="main"></main>
+
+<script>
+const STORAGE_ITEMS = 'foodItems';
+const STORAGE_LOGS = 'mealLogs';
+const STORAGE_WATER = 'waterLogs';
+
+const MEALS = [
+  {id:'breakfast', label:'Breakfast', color:'--breakfast'},
+  {id:'lunch', label:'Lunch', color:'--lunch'},
+  {id:'snack', label:'Snack', color:'--snack'},
+  {id:'dinner', label:'Dinner', color:'--dinner'},
+];
+const TABS = [
+  {id:'today', label:'Today'},
+  {id:'water', label:'Water'},
+  ...MEALS,
+  {id:'history', label:'History'},
+  {id:'report', label:'Report'},
+  {id:'manage', label:'Manage'},
+];
+
+// Catalog of standard items — empty for now. Send your usual foods and
+// I'll estimate protein/calories per serving and populate this.
+const DEFAULT_FOOD_ITEMS = [
+  // BREAKFAST — home (overnight mix + fruit)
+  {id:'black-coffee', meal:'breakfast', name:'Black Coffee (no sugar/milk)', protein:0, calories:5, unit:'cup', context:'both'},
+  {id:'whey-isolate', meal:'breakfast', name:'Whey Isolate (TruBasics)', protein:28, calories:130, unit:'scoop', context:'home'},
+  {id:'chia-seeds', meal:'breakfast', name:'Chia Seeds', protein:2.5, calories:73, unit:'15g', context:'home'},
+  {id:'whole-truth-muesli', meal:'breakfast', name:'Whole Truth Muesli (dark chocolate, no sugar)', protein:2, calories:75, unit:'~18g', context:'home'},
+  {id:'homemade-protein-powder', meal:'breakfast', name:'Homemade Protein Powder', protein:2, calories:20, unit:'1 tsp', context:'home'},
+  {id:'cacao-powder', meal:'breakfast', name:'Cacao Powder (unsweetened)', protein:1, calories:12, unit:'1 tsp', context:'home'},
+  {id:'choco-chips', meal:'breakfast', name:'Dark Chocolate Chips (few)', protein:0.5, calories:25, unit:'~5g', context:'home'},
+  {id:'apple', meal:'breakfast', name:'Apple', protein:0.5, calories:95, unit:'medium', context:'both'},
+  {id:'guava', meal:'breakfast', name:'Guava', protein:1.4, calories:46, unit:'medium', context:'both'},
+  {id:'pomegranate', meal:'breakfast', name:'Pomegranate', protein:3, calories:144, unit:'1 cup arils', context:'both'},
+  {id:'mango', meal:'breakfast', name:'Mango', protein:1.4, calories:99, unit:'1 cup sliced', context:'both'},
+  {id:'orange', meal:'breakfast', name:'Orange', protein:1.2, calories:62, unit:'medium', context:'both'},
+  // BREAKFAST — travel
+  {id:'yoghurt', meal:'breakfast', name:'Plain Yoghurt', protein:8.5, calories:150, unit:'1 cup', context:'travel'},
+  {id:'muesli-travel', meal:'breakfast', name:'Muesli (travel serving)', protein:2, calories:78, unit:'~20g', context:'travel'},
+  {id:'boiled-eggs', meal:'breakfast', name:'Boiled Eggs', protein:13, calories:155, unit:'2 whole', context:'travel'},
+  {id:'egg-white-omelette', meal:'breakfast', name:'Egg White Omelette (mostly whites)', protein:15, calories:90, unit:'serving', context:'travel'},
+  // LUNCH — home
+  {id:'rice', meal:'lunch', name:'Rice (cooked)', protein:2.7, calories:130, unit:'100g', context:'home'},
+  {id:'sambar', meal:'lunch', name:'Sambar', protein:4, calories:100, unit:'1 bowl', context:'home'},
+  {id:'rasam', meal:'lunch', name:'Rasam', protein:1.5, calories:45, unit:'1 bowl', context:'home'},
+  {id:'curd', meal:'lunch', name:'Curd', protein:5, calories:85, unit:'125-150g', context:'home'},
+  {id:'vegetable-sabzi', meal:'lunch', name:'Vegetable Sabzi', protein:2.5, calories:100, unit:'1 serving', context:'home'},
+  {id:'kootu', meal:'lunch', name:'Kootu', protein:4, calories:90, unit:'1 serving', context:'home'},
+  {id:'tofu-salad', meal:'lunch', name:'Tofu Salad', protein:9, calories:130, unit:'100g tofu + veg', context:'home'},
+  {id:'paneer-salad', meal:'lunch', name:'Paneer Salad', protein:18, calories:300, unit:'100g paneer + veg', context:'home'},
+  {id:'high-protein-chapati', meal:'lunch', name:'High Protein Chapati', protein:9, calories:110, unit:'1 piece', context:'home'},
+  {id:'paneer-curry', meal:'lunch', name:'Paneer Curry', protein:18, calories:320, unit:'100g paneer, curry', context:'home'},
+  {id:'soya-chunks-curry', meal:'lunch', name:'Soya Chunks Curry', protein:14, calories:130, unit:'1 serving', context:'home'},
+  {id:'ghee', meal:'lunch', name:'Ghee (½ tsp)', protein:0, calories:20, unit:'½ tsp', context:'home'},
+  // LUNCH — outside
+  {id:'quick-lunch', meal:'lunch', name:'Quick Lunch (chapati+kurma, 3 rice varieties, papad, kesari)', protein:12, calories:570, unit:'1 meal', context:'travel'},
+  {id:'south-indian-meals', meal:'lunch', name:'South Indian Meals (full thali)', protein:14, calories:650, unit:'1 meal', context:'travel'},
+  {id:'chapati-kurma', meal:'lunch', name:'Chapati & Kurma', protein:9, calories:390, unit:'2 chapatis + kurma', context:'travel'},
+  {id:'paneer-tikka', meal:'lunch', name:'Paneer Tikka', protein:22, calories:380, unit:'restaurant serving', context:'travel'},
+  {id:'veg-biryani', meal:'lunch', name:'Veg Biryani', protein:4, calories:250, unit:'½ bowl', context:'travel'},
+  {id:'curd-rice', meal:'lunch', name:'Curd Rice', protein:3.5, calories:160, unit:'½ bowl', context:'travel'},
+  {id:'sambar-rice-out', meal:'lunch', name:'Sambar Rice', protein:6, calories:250, unit:'1 serving', context:'travel'},
+  {id:'lemon-rice', meal:'lunch', name:'Lemon Rice / Variety Rice', protein:4, calories:280, unit:'1 serving', context:'travel'},
+  {id:'buttermilk', meal:'lunch', name:'Buttermilk', protein:2, calories:40, unit:'1 glass, 200ml', context:'travel'},
+  {id:'plain-curd-out', meal:'lunch', name:'Plain Curd', protein:5, calories:85, unit:'~150g', context:'travel'},
+  {id:'papad-lunch', meal:'lunch', name:'Papad', protein:1, calories:40, unit:'1 piece', context:'travel'},
+  // SNACK
+  {id:'whole-truth-mini-bar', meal:'snack', name:'Whole Truth Mini Protein Bar', protein:7, calories:135, unit:'1 bar', context:'both'},
+  {id:'whole-truth-full-bar', meal:'snack', name:'Whole Truth Protein Bar (full)', protein:14, calories:280, unit:'1 bar', context:'both'},
+  {id:'david-bar', meal:'snack', name:'David Bar', protein:28, calories:150, unit:'1 bar', context:'both'},
+  {id:'peanuts', meal:'snack', name:'Peanuts', protein:7.5, calories:170, unit:'30g', context:'both'},
+  {id:'protein-pudding', meal:'snack', name:'Homemade Protein Pudding', protein:19, calories:190, unit:'1 serving', context:'both'},
+  {id:'dark-chocolate', meal:'snack', name:'Dark Chocolate (few pieces)', protein:2, calories:175, unit:'~30g', context:'both'},
+  // DINNER — home
+  {id:'boiled-egg-dinner', meal:'dinner', name:'Boiled Egg (whole)', protein:6.3, calories:78, unit:'1 whole', context:'home'},
+  {id:'egg-white-dinner', meal:'dinner', name:'Egg White', protein:3.6, calories:17, unit:'1 white', context:'home'},
+  {id:'skyr', meal:'dinner', name:'Skyr', protein:11, calories:90, unit:'1 serving', context:'home'},
+  {id:'home-curd-dinner', meal:'dinner', name:'Home Curd', protein:5, calories:85, unit:'~150g', context:'home'},
+  {id:'plain-dosa', meal:'dinner', name:'Plain Dosa (minimal oil)', protein:2, calories:90, unit:'1 dosa', context:'home'},
+  {id:'chutney', meal:'dinner', name:'Chutney', protein:1, calories:50, unit:'~2 tbsp', context:'home'},
+  {id:'sambar-dinner', meal:'dinner', name:'Sambar', protein:4, calories:100, unit:'1 bowl', context:'home'},
+  {id:'idly', meal:'dinner', name:'Idly', protein:2, calories:40, unit:'1 piece', context:'home'},
+  {id:'upma', meal:'dinner', name:'Upma', protein:5, calories:200, unit:'1 serving', context:'home'},
+  {id:'pongal', meal:'dinner', name:'Pongal', protein:7, calories:250, unit:'1 serving', context:'home'},
+  // DINNER — outside
+  {id:'plain-dosa-out', meal:'dinner', name:'Plain Dosa (restaurant)', protein:3, calories:130, unit:'1 dosa', context:'travel'},
+  {id:'masala-dosa', meal:'dinner', name:'Masala Dosa', protein:5, calories:250, unit:'1 dosa', context:'travel'},
+  {id:'paneer-dosa', meal:'dinner', name:'Paneer Dosa (~75g paneer)', protein:16.5, calories:350, unit:'1 dosa', context:'travel'},
+  {id:'vada', meal:'dinner', name:'Vada', protein:4, calories:130, unit:'1 piece', context:'travel'},
+  {id:'poori', meal:'dinner', name:'Poori', protein:2, calories:100, unit:'1 piece', context:'travel'},
+  {id:'chapati-kurma-out', meal:'dinner', name:'Chapati & Kurma', protein:9, calories:390, unit:'2 chapatis + kurma', context:'travel'},
+  {id:'parotta-kurma', meal:'dinner', name:'Parotta & Kurma', protein:12, calories:700, unit:'2 parottas + kurma', context:'travel'},
+  {id:'paneer-tikka-dinner', meal:'dinner', name:'Paneer Tikka', protein:22, calories:380, unit:'restaurant serving', context:'travel'},
+  {id:'paneer-side-dish', meal:'dinner', name:'Paneer Side Dish', protein:14, calories:350, unit:'1 serving', context:'travel'},
+  {id:'roti-out', meal:'dinner', name:'Roti (no oil/ghee)', protein:3, calories:70, unit:'1 roti', context:'travel'},
+  {id:'veg-biryani-dinner', meal:'dinner', name:'Veg Biryani', protein:8, calories:500, unit:'1 plate', context:'travel'},
+  {id:'pizza', meal:'dinner', name:'Pizza', protein:12, calories:285, unit:'1 slice', context:'travel'},
+  {id:'sandwich', meal:'dinner', name:'Sandwich', protein:10, calories:300, unit:'1 sandwich', context:'travel'},
+  {id:'salad-dinner', meal:'dinner', name:'Salad', protein:3, calories:100, unit:'1 serving', context:'travel'},
+  {id:'flatbread', meal:'dinner', name:'Flatbread (naan-style)', protein:8, calories:260, unit:'1 piece', context:'travel'},
+];
+
+let foodItems = DEFAULT_FOOD_ITEMS.map(f=>({...f}));
+let mealLogs = [];  // {date, meal, items:[{itemId,name,protein,calories,qty}], totalProtein, totalCalories}
+let waterLogs = [];  // {date, ml}
+let activeTab = 'today';
+let contextMode = localStorage.getItem('foodContext') || 'home';
+let mealDraftDate = new Date().toISOString().slice(0,10);
+let mealDraftChecked = {};  // itemId -> qty (0/blank = unchecked)
+let customItems = [{name:'', protein:'', calories:'', qty:1}];
+let summaryDate = new Date().toISOString().slice(0,10);
+let waterDraftDate = new Date().toISOString().slice(0,10);
+let reportMode = 'daily';
+let reportDate = new Date().toISOString().slice(0,10);
+
+function saveFoodItems(){
+  try{ localStorage.setItem(STORAGE_ITEMS, JSON.stringify(foodItems)); }
+  catch(e){ console.warn('save failed', e); alert('Could not save — local storage may be blocked.'); }
+}
+function saveMealLogs(){
+  try{ localStorage.setItem(STORAGE_LOGS, JSON.stringify(mealLogs)); }
+  catch(e){ console.warn('save failed', e); alert('Could not save — local storage may be blocked.'); }
+}
+function saveWaterLogs(){
+  try{ localStorage.setItem(STORAGE_WATER, JSON.stringify(waterLogs)); }
+  catch(e){ console.warn('save failed', e); alert('Could not save — local storage may be blocked.'); }
+}
+function getWaterMl(date){
+  const log = waterLogs.find(w=>w.date===date);
+  return log ? log.ml : 0;
+}
+async function setWaterMl(date, ml){
+  ml = Math.max(0, ml);
+  const idx = waterLogs.findIndex(w=>w.date===date);
+  if(idx>=0) waterLogs[idx].ml = ml;
+  else { waterLogs.push({date, ml}); waterLogs.sort((a,b)=>a.date.localeCompare(b.date)); }
+  await saveWaterLogs();
+}
+function loadAll(){
+  try{
+    const fi = localStorage.getItem(STORAGE_ITEMS);
+    if(fi){ foodItems = JSON.parse(fi); } else { saveFoodItems(); }
+    const ml = localStorage.getItem(STORAGE_LOGS);
+    if(ml){ mealLogs = JSON.parse(ml); } else { saveMealLogs(); }
+    const wl = localStorage.getItem(STORAGE_WATER);
+    if(wl){ waterLogs = JSON.parse(wl); } else { saveWaterLogs(); }
+  }catch(e){ console.warn('load failed', e); }
+
+  let merged = false;
+  DEFAULT_FOOD_ITEMS.forEach(seed=>{
+    if(!foodItems.some(f=>f.id===seed.id)){
+      foodItems.push({...seed});
+      merged = true;
+    }
+  });
+  if(merged) saveFoodItems();
+}
+
+function todayLabel(){
+  const d = new Date();
+  const dd = String(d.getDate()).padStart(2,'0');
+  const mmm = d.toLocaleDateString(undefined,{month:'short'});
+  const weekday = d.toLocaleDateString(undefined,{weekday:'short'});
+  return `${weekday}, ${dd} ${mmm}`;
+}
+function fmtDateDDMM(iso){
+  const [y,m,d] = iso.split('-');
+  return `${d}/${m}`;
+}
+function todayISO(){ return new Date().toISOString().slice(0,10); }
+
+function initMealDraft(meal, date){
+  mealDraftDate = date || todayISO();
+  const existing = mealLogs.find(l=>l.meal===meal && l.date===mealDraftDate);
+  mealDraftChecked = {};
+  if(existing){
+    existing.items.forEach(it=>{ if(it.itemId) mealDraftChecked[it.itemId] = it.qty; });
+    const adHoc = existing.items.filter(it=>!it.itemId).map(it=>({name:it.name, protein:it.protein, calories:it.calories, qty:it.qty}));
+    customItems = adHoc.length ? adHoc : [{name:'', protein:'', calories:'', qty:1}];
+  } else {
+    customItems = [{name:'', protein:'', calories:'', qty:1}];
+  }
+}
+
+function computeDayTotals(date){
+  let protein=0, calories=0;
+  mealLogs.filter(l=>l.date===date).forEach(l=>{ protein+=l.totalProtein||0; calories+=l.totalCalories||0; });
+  return {protein, calories};
+}
+
+function renderWaterTab(){
+  const ml = getWaterMl(waterDraftDate);
+  const glasses = ml/200;
+  let html = `<div class="section-label">Date</div><div class="card">
+    <input type="date" id="waterDate" value="${waterDraftDate}">
+  </div>`;
+
+  html += `<div class="section-label">Today's water</div>
+    <div class="card" style="text-align:center; padding:24px;">
+      <div class="item-name mono" style="font-size:36px; color:var(--dinner);">${ml} ml</div>
+      <div class="item-meta" style="margin-top:4px;">${glasses.toFixed(1)} glasses (200ml each)</div>
+    </div>`;
+
+  html += `<div style="display:flex; gap:8px; margin-bottom:10px;">
+    <button class="save-btn" id="waterMinus" style="background:var(--surface2); color:var(--text); flex:1;">− 200ml</button>
+    <button class="save-btn" id="waterPlus" style="background:var(--dinner); color:#0a1420; flex:1;">+ 200ml</button>
+  </div>`;
+
+  html += `<div class="section-label">Manual entry</div><div class="card">
+    <div style="display:flex; gap:8px; align-items:center;">
+      <input type="number" inputmode="numeric" id="waterManual" value="${ml}" step="50">
+      <span class="item-meta" style="flex-shrink:0;">ml</span>
+      <button class="icon-btn" id="waterSetBtn" style="background:var(--surface2); border-radius:8px; flex-shrink:0;">Set</button>
+    </div>
+  </div>`;
+
+  const dates = [...new Set(waterLogs.map(w=>w.date))].filter(d=>waterLogs.find(w=>w.date===d).ml>0).sort().slice(-10);
+  if(dates.length){
+    html += `<div class="section-label" style="margin-top:18px;">Recent</div>`;
+    html += buildSimpleWaterTable(dates);
+  }
+  return html;
+}
+
+function buildSimpleWaterTable(dates){
+  const head = `<tr><th>Metric</th>${dates.map((d,i)=>`<th class="${i===dates.length-1?'latest':''}">${fmtDateDDMM(d)}</th>`).join('')}</tr>`;
+  const row = `<tr><td>Water (ml)</td>${dates.map((d,i)=>`<td class="${i===dates.length-1?'latest':''}">${getWaterMl(d)}</td>`).join('')}</tr>`;
+  return `<div class="trend-table-wrap"><table class="trend-table">${head}${row}</table></div>`;
+}
+
+function renderTodayTab(){
+  const totals = computeDayTotals(summaryDate);
+  let html = `<div class="section-label">Viewing date</div><div class="card">
+    <input type="date" id="summaryDate" value="${summaryDate}">
+  </div>`;
+
+  html += `<div class="section-label">Day total</div>
+    <div class="dash-row">
+      <div class="dash-card"><div class="item-meta">Protein</div><div class="item-name mono" style="font-size:26px; color:var(--lunch);">${totals.protein.toFixed(0)}g</div></div>
+      <div class="dash-card"><div class="item-meta">Calories</div><div class="item-name mono" style="font-size:26px; color:var(--lunch);">${totals.calories.toFixed(0)}</div></div>
+      <div class="dash-card"><div class="item-meta">Water</div><div class="item-name mono" style="font-size:26px; color:var(--dinner);">${getWaterMl(summaryDate)}ml</div></div>
+    </div>`;
+
+  html += `<div class="section-label" style="margin-top:18px;">By meal <span style="text-transform:none; font-weight:400;">— tap to edit</span></div>`;
+  MEALS.forEach(m=>{
+    const log = mealLogs.find(l=>l.date===summaryDate && l.meal===m.id);
+    const accent = `var(${m.color})`;
+    if(!log || !log.items.length){
+      html += `<div class="card" data-edit-summary="${m.id}" style="cursor:pointer; opacity:0.6;">
+        <div class="item-name" style="color:${accent};">${m.label}</div>
+        <div class="item-meta" style="margin-top:2px;">Not logged</div>
+      </div>`;
+    } else {
+      const names = log.items.map(it=>it.name).join(', ');
+      html += `<div class="card" data-edit-summary="${m.id}" style="cursor:pointer;">
+        <div style="display:flex; justify-content:space-between; align-items:baseline;">
+          <div class="item-name" style="color:${accent};">${m.label}</div>
+          <div class="item-meta mono">${(log.totalProtein||0).toFixed(0)}g · ${(log.totalCalories||0).toFixed(0)} kcal</div>
+        </div>
+        <div class="item-meta" style="margin-top:4px;">${names}</div>
+      </div>`;
+    }
+  });
+  return html;
+}
+
+function renderMealTab(meal){
+  const items = foodItems.filter(f=>f.meal===meal && (f.context==='both' || !f.context || f.context===contextMode));
+  const accent = `var(${MEALS.find(m=>m.id===meal).color})`;
+  let html = `<div class="section-label">Entry date</div><div class="card">
+    <input type="date" id="mealDate" value="${mealDraftDate}">
+  </div>`;
+
+  html += `<div style="display:flex; gap:8px; margin-bottom:14px;">
+    <button class="tab-btn ${contextMode==='home'?'active':''}" data-context="home" style="flex:1; text-align:center; border-radius:10px;">🏠 Home</button>
+    <button class="tab-btn ${contextMode==='travel'?'active':''}" data-context="travel" style="flex:1; text-align:center; border-radius:10px;">✈️ Outside</button>
+  </div>`;
+
+  const todayTotals = computeDayTotals(mealDraftDate);
+  html += `<div class="section-label">Today so far (all meals)</div>
+    <div class="dash-row">
+      <div class="dash-card"><div class="item-meta">Protein</div><div class="item-name mono" style="font-size:20px; color:${accent};">${todayTotals.protein.toFixed(0)}g</div></div>
+      <div class="dash-card"><div class="item-meta">Calories</div><div class="item-name mono" style="font-size:20px; color:${accent};">${todayTotals.calories.toFixed(0)}</div></div>
+    </div>`;
+
+  html += `<div class="section-label">${MEALS.find(m=>m.id===meal).label}${contextMode==='travel'?' — outside options':' — home options'}</div>`;
+  if(!items.length){
+    html += `<div class="empty">No ${contextMode} items set up for this meal yet. Add some in Manage, or use the quick-add box below.</div>`;
+  } else {
+    items.forEach(it=>{
+      const checked = mealDraftChecked[it.id]!==undefined && mealDraftChecked[it.id]!=='';
+      const qty = checked ? mealDraftChecked[it.id] : 1;
+      html += `<div class="item-row">
+        <input type="checkbox" data-item="${it.id}" ${checked?'checked':''}>
+        <div class="item-info">
+          <div class="item-name">${it.name}</div>
+          <div class="item-meta">${it.protein}g protein · ${it.calories} kcal per ${it.unit||'serving'}</div>
+        </div>
+        <input type="number" inputmode="decimal" class="qty-input" data-qty="${it.id}" value="${qty}" min="0" step="0.5">
+      </div>`;
+    });
+  }
+
+  html += `<div class="section-label" style="margin-top:18px;">Quick add (one-off items)</div>`;
+  customItems.forEach((ci,i)=>{
+    html += `<div class="card" data-custom-idx="${i}">
+      <div style="display:flex; gap:8px; margin-bottom:8px; align-items:center;">
+        <input type="text" class="custom-name" placeholder="Item name" value="${ci.name}" style="flex:2;">
+        ${customItems.length>1 ? `<button class="icon-btn del" data-remove-custom="${i}" style="padding:2px 8px; flex-shrink:0;">✕</button>` : ''}
+      </div>
+      <div style="display:flex; gap:8px;">
+        <input type="number" inputmode="decimal" class="custom-protein" placeholder="Protein g" value="${ci.protein}">
+        <input type="number" inputmode="decimal" class="custom-calories" placeholder="Calories" value="${ci.calories}">
+        <input type="number" inputmode="decimal" class="custom-qty" placeholder="Qty" value="${ci.qty}" style="width:60px;">
+      </div>
+    </div>`;
+  });
+  html += `<button class="icon-btn" id="addCustomBtn" style="color:var(--muted); font-size:12px; margin-bottom:6px;">+ Add another item</button>`;
+
+  const existingForDate = mealLogs.some(l=>l.meal===meal && l.date===mealDraftDate);
+  html += `<button class="save-btn" id="saveMealBtn" style="background:${accent};">${existingForDate ? 'Update this meal' : 'Save meal'}</button>`;
+
+  const recent = mealLogs.filter(l=>l.meal===meal).slice().reverse().slice(0,8);
+  if(recent.length){
+    html += `<div class="section-label" style="margin-top:22px;">Recent ${MEALS.find(m=>m.id===meal).label.toLowerCase()} logs <span style="text-transform:none; font-weight:400;">— tap to edit</span></div>`;
+    recent.forEach(l=>{
+      const names = l.items.map(it=>it.name).join(', ') || '—';
+      html += `<div class="card" data-edit-meal="${meal}|${l.date}" style="cursor:pointer;">
+        <div class="item-meta mono">${fmtDateDDMM(l.date)} — ${(l.totalProtein||0).toFixed(0)}g protein, ${(l.totalCalories||0).toFixed(0)} kcal</div>
+        <div class="item-meta" style="margin-top:4px;">${names}</div>
+      </div>`;
+    });
+  }
+  return html;
+}
+
+function buildMealTrendTable(meal, n=12){
+  const rows = mealLogs.filter(l=>l.meal===meal).slice(-n);
+  if(!rows.length) return '<div class="empty">No logs yet.</div>';
+  const head = `<tr><th>Metric</th>${rows.map((l,i)=>`<th class="${i===rows.length-1?'latest':''}">${fmtDateDDMM(l.date)}</th>`).join('')}</tr>`;
+  const protRow = `<tr><td>Protein (g)</td>${rows.map((l,i)=>`<td class="${i===rows.length-1?'latest':''}">${(l.totalProtein||0).toFixed(0)}</td>`).join('')}</tr>`;
+  const calRow = `<tr><td>Calories</td>${rows.map((l,i)=>`<td class="${i===rows.length-1?'latest':''}">${(l.totalCalories||0).toFixed(0)}</td>`).join('')}</tr>`;
+  return `<div class="trend-table-wrap"><table class="trend-table">${head}${protRow}${calRow}</table></div>`;
+}
+
+function buildDailyTotalTable(n=14){
+  const dates = [...new Set(mealLogs.map(l=>l.date))].sort().slice(-n);
+  if(!dates.length) return '<div class="empty">No logs yet.</div>';
+  const head = `<tr><th>Metric</th>${dates.map((d,i)=>`<th class="${i===dates.length-1?'latest':''}">${fmtDateDDMM(d)}</th>`).join('')}</tr>`;
+  const protRow = `<tr><td>Protein (g)</td>${dates.map((d,i)=>`<td class="${i===dates.length-1?'latest':''}">${computeDayTotals(d).protein.toFixed(0)}</td>`).join('')}</tr>`;
+  const calRow = `<tr><td>Calories</td>${dates.map((d,i)=>`<td class="${i===dates.length-1?'latest':''}">${computeDayTotals(d).calories.toFixed(0)}</td>`).join('')}</tr>`;
+  return `<div class="trend-table-wrap"><table class="trend-table">${head}${protRow}${calRow}</table></div>`;
+}
+
+function renderHistoryTab(){
+  let html = `<div class="section-label">Daily totals</div>${buildDailyTotalTable()}`;
+  MEALS.forEach(m=>{
+    html += `<div class="section-label">${m.label}</div>${buildMealTrendTable(m.id)}`;
+  });
+  return html;
+}
+
+function buildReportText(days=30){
+  const cutoff = new Date(); cutoff.setDate(cutoff.getDate()-days);
+  const cutoffISO = cutoff.toISOString().slice(0,10);
+  let lines = [];
+  lines.push(`Food log summary — last ${days} days (generated ${fmtDateDDMM(todayISO())}/2026)`);
+  lines.push('');
+  const dates = [...new Set(mealLogs.filter(l=>l.date>=cutoffISO).map(l=>l.date))].sort();
+  if(!dates.length){ lines.push('No logs in this window yet.'); return lines.join('\n'); }
+  dates.forEach(date=>{
+    const totals = computeDayTotals(date);
+    const water = getWaterMl(date);
+    lines.push(`## ${fmtDateDDMM(date)} — ${totals.protein.toFixed(0)}g protein, ${totals.calories.toFixed(0)} kcal${water?`, ${water}ml water`:''}`);
+    MEALS.forEach(m=>{
+      const log = mealLogs.find(l=>l.date===date && l.meal===m.id);
+      if(!log || !log.items.length) return;
+      const parts = log.items.map(it=>`${it.name} (${it.protein}g/${it.calories}kcal${it.qty!==1?` ×${it.qty}`:''})`);
+      lines.push(`  ${m.label}: ${parts.join(', ')}`);
+    });
+    lines.push('');
+  });
+  return lines.join('\n');
+}
+
+function buildDailyReportText(date){
+  let lines = [];
+  lines.push(`Food log — ${fmtDateDDMM(date)}/2026`);
+  lines.push('');
+  const totals = computeDayTotals(date);
+  const water = getWaterMl(date);
+  lines.push(`Day total: ${totals.protein.toFixed(0)}g protein, ${totals.calories.toFixed(0)} kcal${water?`, ${water}ml water`:''}`);
+  lines.push('');
+  let any = false;
+  MEALS.forEach(m=>{
+    const log = mealLogs.find(l=>l.date===date && l.meal===m.id);
+    if(!log || !log.items.length) return;
+    any = true;
+    const parts = log.items.map(it=>`${it.name} (${it.protein}g/${it.calories}kcal${it.qty!==1?` ×${it.qty}`:''})`);
+    lines.push(`${m.label}: ${parts.join(', ')}`);
+  });
+  if(!any) lines.push('Nothing logged on this date.');
+  return lines.join('\n');
+}
+
+function renderReportTab(){
+  const mode = reportMode;
+  const text = mode==='daily' ? buildDailyReportText(reportDate) : buildReportText(30);
+  return `<div class="section-label">Shareable report</div>
+    <div style="display:flex; gap:8px; margin-bottom:14px;">
+      <button class="tab-btn ${mode==='daily'?'active':''}" data-report-mode="daily" style="flex:1; text-align:center; border-radius:10px;">Daily</button>
+      <button class="tab-btn ${mode==='monthly'?'active':''}" data-report-mode="monthly" style="flex:1; text-align:center; border-radius:10px;">Last 30 days</button>
+    </div>
+    ${mode==='daily' ? `<div class="card"><input type="date" id="reportDate" value="${reportDate}"></div>` : ''}
+    <div class="card">
+      <textarea id="reportText" readonly style="width:100%; min-height:280px; background:var(--surface2);
+        border:1px solid var(--border); border-radius:10px; padding:10px; color:var(--text);
+        font-family:'IBM Plex Mono',monospace; font-size:11.5px; line-height:1.6;">${text}</textarea>
+    </div>
+    <button class="save-btn" id="copyReportBtn" style="background:var(--surface2); color:var(--lunch);">Copy report</button>
+    <div class="item-meta" style="margin-top:10px; text-align:center;">Paste this into a new chat with Claude, ChatGPT, or your dietitian.</div>`;
+}
+
+function renderManageTab(){
+  let html = '';
+  MEALS.forEach(m=>{
+    html += `<div class="section-label">${m.label}</div>`;
+    const items = foodItems.filter(f=>f.meal===m.id);
+    if(!items.length){ html += `<div class="empty">No items yet.</div>`; }
+    items.forEach(it=>{
+      html += `<div class="manage-row">
+        <div>
+          <div class="manage-name">${it.name}</div>
+          <div class="manage-meta">${it.protein}g protein · ${it.calories} kcal / ${it.unit||'serving'} · ${it.context==='travel'?'✈️ Outside':it.context==='both'?'🏠✈️ Both':'🏠 Home'}</div>
+        </div>
+        <button class="icon-btn del" data-del-item="${it.id}">Remove</button>
+      </div>`;
+    });
+  });
+  html += `<div class="section-label" style="margin-top:20px;">Add standard item</div>
+    <div class="card">
+      <div style="margin-bottom:8px;">
+        <label style="font-size:12px; color:var(--muted); display:block; margin-bottom:4px;">Name</label>
+        <input type="text" id="newItemName" placeholder="e.g. 2 rotis + dal">
+      </div>
+      <div style="margin-bottom:8px;">
+        <label style="font-size:12px; color:var(--muted); display:block; margin-bottom:4px;">Meal</label>
+        <select id="newItemMeal">
+          ${MEALS.map(m=>`<option value="${m.id}">${m.label}</option>`).join('')}
+        </select>
+      </div>
+      <div style="margin-bottom:8px;">
+        <label style="font-size:12px; color:var(--muted); display:block; margin-bottom:4px;">Context</label>
+        <select id="newItemContext">
+          <option value="home">Home</option>
+          <option value="travel">Outside</option>
+          <option value="both">Both</option>
+        </select>
+      </div>
+      <div style="display:flex; gap:8px; margin-bottom:8px;">
+        <div style="flex:1;">
+          <label style="font-size:12px; color:var(--muted); display:block; margin-bottom:4px;">Protein (g)</label>
+          <input type="number" inputmode="decimal" id="newItemProtein" placeholder="0">
+        </div>
+        <div style="flex:1;">
+          <label style="font-size:12px; color:var(--muted); display:block; margin-bottom:4px;">Calories</label>
+          <input type="number" inputmode="decimal" id="newItemCalories" placeholder="0">
+        </div>
+      </div>
+      <div style="margin-bottom:8px;">
+        <label style="font-size:12px; color:var(--muted); display:block; margin-bottom:4px;">Unit label (optional)</label>
+        <input type="text" id="newItemUnit" placeholder="e.g. bowl, plate, 2 pcs">
+      </div>
+      <button class="save-btn" id="addItemBtn" style="background:var(--surface2); color:var(--text);">+ Add</button>
+    </div>
+    <div class="section-label" style="margin-top:24px;">Backup & restore</div>
+    <div class="card">
+      <div style="font-size:11.5px; color:var(--muted); margin-bottom:10px; line-height:1.5;">
+        Data lives in this browser only. Before downloading a new version of this app, export a backup here — then paste it back in after opening the new file.
+      </div>
+      <button class="save-btn" id="exportBtn" style="background:var(--surface2); color:var(--text); margin-bottom:14px;">Export backup</button>
+      <textarea id="backupText" readonly style="width:100%; min-height:100px; background:var(--surface2);
+        border:1px solid var(--border); border-radius:10px; padding:10px; color:var(--text);
+        font-family:'IBM Plex Mono',monospace; font-size:10.5px; line-height:1.5; display:none;"></textarea>
+      <button class="save-btn" id="copyBackupBtn" style="background:var(--surface2); color:var(--lunch); display:none; margin-top:8px;">Copy backup</button>
+      <div style="font-size:11px; color:var(--muted); margin-top:16px; margin-bottom:6px;">Paste a backup below to restore:</div>
+      <textarea id="importText" placeholder="Paste backup JSON here" style="width:100%; min-height:100px; background:var(--surface2);
+        border:1px solid var(--border); border-radius:10px; padding:10px; color:var(--text);
+        font-family:'IBM Plex Mono',monospace; font-size:10.5px;"></textarea>
+      <button class="save-btn" id="importBtn" style="margin-top:8px;">Restore from backup</button>
+    </div>`;
+  return html;
+}
+
+function render(){
+  document.getElementById('todayLabel').textContent = todayLabel();
+  document.getElementById('tabs').innerHTML = TABS.map(t=>
+    `<button class="tab-btn ${activeTab===t.id?'active':''}" data-tab="${t.id}">${t.label}</button>`).join('');
+
+  let html = '';
+  if(activeTab==='today') html = renderTodayTab();
+  else if(activeTab==='water') html = renderWaterTab();
+  else if(MEALS.some(m=>m.id===activeTab)) html = renderMealTab(activeTab);
+  else if(activeTab==='history') html = renderHistoryTab();
+  else if(activeTab==='report') html = renderReportTab();
+  else if(activeTab==='manage') html = renderManageTab();
+
+  document.getElementById('main').innerHTML = html;
+  attachEvents();
+}
+
+function attachEvents(){
+  document.querySelectorAll('[data-tab]').forEach(btn=>{
+    btn.onclick = ()=>{
+      activeTab = btn.dataset.tab;
+      if(MEALS.some(m=>m.id===activeTab)) initMealDraft(activeTab);
+      render();
+    };
+  });
+
+  const summaryDateInp = document.getElementById('summaryDate');
+  if(summaryDateInp) summaryDateInp.onchange = ()=>{ summaryDate = summaryDateInp.value; render(); };
+  document.querySelectorAll('[data-edit-summary]').forEach(card=>{
+    card.onclick = ()=>{
+      activeTab = card.dataset.editSummary;
+      initMealDraft(activeTab, summaryDate);
+      render();
+      window.scrollTo({top:0, behavior:'smooth'});
+    };
+  });
+
+  const waterDateInp = document.getElementById('waterDate');
+  if(waterDateInp) waterDateInp.onchange = ()=>{ waterDraftDate = waterDateInp.value; render(); };
+  const waterPlus = document.getElementById('waterPlus');
+  if(waterPlus) waterPlus.onclick = async ()=>{ await setWaterMl(waterDraftDate, getWaterMl(waterDraftDate)+200); render(); };
+  const waterMinus = document.getElementById('waterMinus');
+  if(waterMinus) waterMinus.onclick = async ()=>{ await setWaterMl(waterDraftDate, getWaterMl(waterDraftDate)-200); render(); };
+  const waterSetBtn = document.getElementById('waterSetBtn');
+  if(waterSetBtn) waterSetBtn.onclick = async ()=>{
+    const val = parseFloat(document.getElementById('waterManual').value)||0;
+    await setWaterMl(waterDraftDate, val);
+    render();
+  };
+
+  document.querySelectorAll('[data-item]').forEach(cb=>{
+    cb.onchange = ()=>{
+      const id = cb.dataset.item;
+      if(cb.checked){
+        const qtyInp = document.querySelector(`[data-qty="${id}"]`);
+        mealDraftChecked[id] = qtyInp ? parseFloat(qtyInp.value)||1 : 1;
+      } else {
+        delete mealDraftChecked[id];
+      }
+    };
+  });
+  document.querySelectorAll('[data-qty]').forEach(inp=>{
+    inp.oninput = ()=>{
+      const id = inp.dataset.qty;
+      if(mealDraftChecked[id]!==undefined) mealDraftChecked[id] = parseFloat(inp.value)||0;
+    };
+  });
+
+  const mealDateInp = document.getElementById('mealDate');
+  if(mealDateInp) mealDateInp.onchange = ()=>{ initMealDraft(activeTab, mealDateInp.value); render(); };
+
+  document.querySelectorAll('[data-context]').forEach(btn=>{
+    btn.onclick = ()=>{
+      contextMode = btn.dataset.context;
+      try{ localStorage.setItem('foodContext', contextMode); }catch(e){}
+      render();
+    };
+  });
+
+  document.querySelectorAll('[data-custom-idx]').forEach(card=>{
+    const idx = parseInt(card.dataset.customIdx);
+    const nameInp = card.querySelector('.custom-name');
+    const proteinInp = card.querySelector('.custom-protein');
+    const caloriesInp = card.querySelector('.custom-calories');
+    const qtyInp = card.querySelector('.custom-qty');
+    if(nameInp) nameInp.oninput = ()=>{ customItems[idx].name = nameInp.value; };
+    if(proteinInp) proteinInp.oninput = ()=>{ customItems[idx].protein = proteinInp.value===''?'':parseFloat(proteinInp.value); };
+    if(caloriesInp) caloriesInp.oninput = ()=>{ customItems[idx].calories = caloriesInp.value===''?'':parseFloat(caloriesInp.value); };
+    if(qtyInp) qtyInp.oninput = ()=>{ customItems[idx].qty = qtyInp.value===''?'':parseFloat(qtyInp.value); };
+  });
+  document.querySelectorAll('[data-remove-custom]').forEach(btn=>{
+    btn.onclick = ()=>{ customItems.splice(parseInt(btn.dataset.removeCustom),1); render(); };
+  });
+  const addCustomBtn = document.getElementById('addCustomBtn');
+  if(addCustomBtn) addCustomBtn.onclick = ()=>{ customItems.push({name:'', protein:'', calories:'', qty:1}); render(); };
+
+  document.querySelectorAll('[data-edit-meal]').forEach(card=>{
+    card.onclick = ()=>{
+      const [meal, date] = card.dataset.editMeal.split('|');
+      initMealDraft(meal, date);
+      render();
+      window.scrollTo({top:0, behavior:'smooth'});
+    };
+  });
+
+  const saveMealBtn = document.getElementById('saveMealBtn');
+  if(saveMealBtn) saveMealBtn.onclick = async ()=>{
+    const date = document.getElementById('mealDate').value || mealDraftDate;
+    const items = [];
+    let totalProtein=0, totalCalories=0;
+    Object.keys(mealDraftChecked).forEach(id=>{
+      const it = foodItems.find(f=>f.id===id);
+      if(!it) return;
+      const qty = mealDraftChecked[id] || 1;
+      items.push({itemId:id, name:it.name, protein:it.protein, calories:it.calories, qty});
+      totalProtein += it.protein*qty;
+      totalCalories += it.calories*qty;
+    });
+    customItems.forEach(ci=>{
+      if(!ci.name || (ci.protein==='' && ci.calories==='')) return;
+      const qty = ci.qty || 1;
+      const p = ci.protein || 0, c = ci.calories || 0;
+      items.push({name:ci.name, protein:p, calories:c, qty});
+      totalProtein += p*qty;
+      totalCalories += c*qty;
+    });
+    if(!items.length){ alert('Check at least one item or use quick-add.'); return; }
+    const entry = {date, meal:activeTab, items, totalProtein, totalCalories};
+    const existingIdx = mealLogs.findIndex(l=>l.date===date && l.meal===activeTab);
+    if(existingIdx>=0) mealLogs[existingIdx] = entry; else { mealLogs.push(entry); mealLogs.sort((a,b)=>a.date.localeCompare(b.date)); }
+    await saveMealLogs();
+    saveMealBtn.textContent = 'Saved ✓';
+    saveMealBtn.classList.add('saved');
+    setTimeout(()=>{ render(); },900);
+  };
+
+  document.querySelectorAll('[data-report-mode]').forEach(btn=>{
+    btn.onclick = ()=>{ reportMode = btn.dataset.reportMode; render(); };
+  });
+  const reportDateInp = document.getElementById('reportDate');
+  if(reportDateInp) reportDateInp.onchange = ()=>{ reportDate = reportDateInp.value; render(); };
+
+  const copyBtn = document.getElementById('copyReportBtn');
+  if(copyBtn) copyBtn.onclick = async ()=>{
+    const ta = document.getElementById('reportText');
+    try{ await navigator.clipboard.writeText(ta.value); }
+    catch(e){ ta.removeAttribute('readonly'); ta.select(); document.execCommand('copy'); ta.setAttribute('readonly','true'); }
+    copyBtn.textContent = 'Copied ✓';
+    setTimeout(()=>{ copyBtn.textContent = 'Copy report'; },1500);
+  };
+
+  document.querySelectorAll('[data-del-item]').forEach(btn=>{
+    btn.onclick = async ()=>{
+      foodItems = foodItems.filter(f=>f.id!==btn.dataset.delItem);
+      await saveFoodItems();
+      render();
+    };
+  });
+  const addItemBtn = document.getElementById('addItemBtn');
+  if(addItemBtn) addItemBtn.onclick = async ()=>{
+    const name = document.getElementById('newItemName').value.trim();
+    if(!name){ alert('Enter an item name.'); return; }
+    const meal = document.getElementById('newItemMeal').value;
+    const protein = parseFloat(document.getElementById('newItemProtein').value)||0;
+    const calories = parseFloat(document.getElementById('newItemCalories').value)||0;
+    const unit = document.getElementById('newItemUnit').value.trim();
+    const context = document.getElementById('newItemContext').value;
+    const id = name.toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/(^-|-$)/g,'') + '-' + Date.now().toString(36);
+    foodItems.push({id, meal, name, protein, calories, unit, context});
+    await saveFoodItems();
+    render();
+  };
+
+  const exportBtn = document.getElementById('exportBtn');
+  if(exportBtn) exportBtn.onclick = ()=>{
+    const backup = JSON.stringify({foodItems, mealLogs, waterLogs}, null, 0);
+    const ta = document.getElementById('backupText');
+    const copyBackupBtn = document.getElementById('copyBackupBtn');
+    ta.value = backup;
+    ta.style.display = 'block';
+    copyBackupBtn.style.display = 'block';
+  };
+  const copyBackupBtn = document.getElementById('copyBackupBtn');
+  if(copyBackupBtn) copyBackupBtn.onclick = async ()=>{
+    const ta = document.getElementById('backupText');
+    try{ await navigator.clipboard.writeText(ta.value); }
+    catch(e){ ta.removeAttribute('readonly'); ta.select(); document.execCommand('copy'); ta.setAttribute('readonly','true'); }
+    copyBackupBtn.textContent = 'Copied ✓';
+    setTimeout(()=>{ copyBackupBtn.textContent = 'Copy backup'; },1500);
+  };
+  const importBtn = document.getElementById('importBtn');
+  if(importBtn) importBtn.onclick = async ()=>{
+    const raw = document.getElementById('importText').value.trim();
+    if(!raw){ alert('Paste a backup first.'); return; }
+    try{
+      const data = JSON.parse(raw);
+      if(data.foodItems) foodItems = data.foodItems;
+      if(data.mealLogs) mealLogs = data.mealLogs;
+      if(data.waterLogs) waterLogs = data.waterLogs;
+      await saveFoodItems(); await saveMealLogs(); await saveWaterLogs();
+      alert('Backup restored.');
+      render();
+    }catch(e){
+      alert('That doesn\'t look like a valid backup — check you copied the whole thing.');
+    }
+  };
+}
+
+(function init(){
+  loadAll();
+  initMealDraft('breakfast');
+  render();
+})();
+</script>
+</body>
+</html>
